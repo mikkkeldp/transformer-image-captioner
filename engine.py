@@ -25,7 +25,7 @@ def train_one_epoch(model, criterion, data_loader,
             samples = utils.NestedTensor(images, masks).to(device)
             caps = caps.to(device)
             cap_masks = cap_masks.to(device)
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
 
             with autocast():
                 outputs = model(samples, caps[:, :-1], cap_masks[:, :-1])

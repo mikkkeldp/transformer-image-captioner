@@ -58,7 +58,7 @@ def build_vocab(args):
 
     for _, cap in f8k_train.captions.items():
         for i in cap:
-            # tokens = nltk.tokenize.word_tokenize(i.lower())
+
             encoding = tokenizer.encode(i.lower())
             tokens = tokenizer.convert_ids_to_tokens(encoding)
             counter.update(tokens)
@@ -87,8 +87,7 @@ def main(args):
         pickle.dump(vocab, f)
     print("Vocabulary size: ", len(vocab))
     print("Saved the vocabulary to ", vocab_path)
-
-
+  
 if __name__ == '__main__':
     config = configparser.ConfigParser() 
     config.read("config.ini") 

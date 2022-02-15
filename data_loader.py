@@ -14,7 +14,7 @@ from transformers import BertTokenizer
 
 class Flickr8kTrainDataset(data.Dataset):
 
-    def __init__(self, image_dir, caption_path, split_path, vocab, transform=None, cpi=5):
+    def __init__(self, image_dir, caption_path, split_path, vocab, transform=None, cpi=5, max_length=33):
         self.image_dir = image_dir
         self.f8k = Flickr8k(caption_path=caption_path)
 
@@ -26,9 +26,8 @@ class Flickr8kTrainDataset(data.Dataset):
         #change this to 10 for augmented captions
         self.cpi = cpi # captions per image
 
-        self.tokenizer = BertTokenizer.from_pretrained(
-            'bert-base-uncased', do_lower=True)
-        self.max_length = 128 + 1 #max_position_embeddings
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower=True)
+        self.max_length = max_length + 1 #max_position_embeddings
 
 
     def __getitem__(self, index):
@@ -47,12 +46,12 @@ class Flickr8kTrainDataset(data.Dataset):
         image = nested_tensor_from_tensor_list(image.unsqueeze(0))
 
 
-        caption_encoded = self.tokenizer.encode_plus(
-            caption, max_length=self.max_length, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
+        caption_encoded = self.tokenizer.encode_plus(caption, max_length=self.max_length, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
         
         caption = np.array(caption_encoded['input_ids'])
+   
         cap_mask = (1 - np.array(caption_encoded['attention_mask'])).astype(bool)
-
+  
 
         return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask
 
@@ -62,7 +61,7 @@ class Flickr8kTrainDataset(data.Dataset):
 
 
 
-def get_train_loader(image_dir, caption_path, train_path, vocab, transform, batch_size, shuffle, num_workers, cpi):
+def get_train_loader(image_dir, caption_path, train_path, vocab, transform, batch_size, shuffle, num_workers, cpi, max_length):
     """Returns torch.utils.data.DataLoader for custom flickr8k dataset."""
   
     f8k = Flickr8kTrainDataset(image_dir=image_dir,
@@ -70,7 +69,8 @@ def get_train_loader(image_dir, caption_path, train_path, vocab, transform, batc
                        split_path=train_path,
                        vocab=vocab,
                        transform=transform,
-                       cpi=cpi)
+                       cpi=cpi,
+                       max_length=max_length)
 
 
     sampler_train = torch.utils.data.RandomSampler(f8k)
@@ -115,16 +115,12 @@ class Flickr8kValidationDataset(data.Dataset):
             image = self.transform(image)
         image = nested_tensor_from_tensor_list(image.unsqueeze(0))
       
+        caption_encoded = self.tokenizer.encode_plus(caption, max_length=self.j, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
         
-        caption_encoded = self.tokenizer.encode_plus(
-            caption, max_length=self.max_length, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
-
         caption = np.array(caption_encoded['input_ids'])
-        cap_mask = (
-            1 - np.array(caption_encoded['attention_mask'])).astype(bool)
+        cap_mask = (1 - np.array(caption_encoded['attention_mask'])).astype(bool)
 
-
-        
+       
         return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask
             
         
@@ -134,7 +130,7 @@ class Flickr8kValidationDataset(data.Dataset):
 
 
 
-def get_validation_loader(image_dir, caption_path, val_path, vocab, transform, batch_size, num_workers):
+def get_validation_loader(image_dir, caption_path, val_path, vocab, transform, batch_size, num_workers, max_length):
     f8k = Flickr8kValidationDataset(image_dir=image_dir,
                    caption_path=caption_path,
                    split_path=val_path,
