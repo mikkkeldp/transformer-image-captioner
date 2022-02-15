@@ -1,6 +1,6 @@
 # Transformer image captioning 
 
-This project implements a Transformer-based image captioning model. We aim at training an image captioning network in a low-resource regime. We make use of the Flickr8k dataset consisting of ~30,000 image-caption pairs. This is still a work in progress and is inspired by the following papers:
+This project implements a Transformer-based image captioning model. We aim at training an image captioning network in a low-resource regime. We make use of the Flickr8k dataset consisting of 30,000 image-caption pairs. This is still a work in progress and is inspired by the following papers:
 
 <table>
   <tr>
