@@ -46,7 +46,8 @@ class Transformer(nn.Module):
         # print(src.shape)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
         mask = mask.flatten(1)
-
+        # print("MASK TRANS")
+        # print(mask.shape)
         tgt = self.embeddings(tgt).permute(1, 0, 2)
         query_embed = self.embeddings.position_embeddings.weight.unsqueeze(1)
         query_embed = query_embed.repeat(1, bs, 1)

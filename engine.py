@@ -26,7 +26,7 @@ def train_one_epoch(model, criterion, data_loader,
             caps = caps.to(device)
             cap_masks = cap_masks.to(device)
             optimizer.zero_grad(set_to_none=True)
-
+            ids = []
             with autocast():
                 outputs = model(samples, caps[:, :-1], cap_masks[:, :-1])
                 loss = criterion(outputs.permute(0, 2, 1), caps[:, 1:])

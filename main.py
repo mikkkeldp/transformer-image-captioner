@@ -97,10 +97,15 @@ def main(config):
         param_dicts, lr=config.lr, weight_decay=config.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, config.lr_drop)
 
- 
-    data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.trainImages.txt", vocab,
-                             transform_test, config.batch_size,
-                             shuffle=True, num_workers=2, cpi=5, max_length=config.max_position_embeddings)
+    if config.aug_caps:
+        print("Caption augmentation")
+        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/new_caps.txt", "./dataset/Flickr_8k.trainImages.txt", vocab,
+                                transform_test, config.batch_size,
+                                shuffle=True, num_workers=2, cpi=10, max_length=config.max_position_embeddings)
+    else:
+        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.trainImages.txt", vocab,
+                                transform_test, config.batch_size,
+                                shuffle=True, num_workers=2, cpi=5, max_length=config.max_position_embeddings)
 
     data_loader_val = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.devImages.txt", vocab,
                              transform_val, config.batch_size,
@@ -135,7 +140,7 @@ def main(config):
         lr_scheduler.step()
         print(f"Training Loss: {epoch_loss}")
         
-        if epoch > 2:
+        if epoch > 0:
             torch.save({
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),

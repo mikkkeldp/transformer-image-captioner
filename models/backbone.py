@@ -72,6 +72,7 @@ class BackboneBase(nn.Module):
             m = tensor_list.mask
             assert m is not None
             mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
+            # print("MASSKKK", mask[2])
             out[name] = NestedTensor(x, mask)
         return out
 
@@ -110,6 +111,7 @@ def build_backbone(config):
     train_backbone = config.lr_backbone > 0
     return_interm_layers = False
     backbone = Backbone(config.backbone, train_backbone, return_interm_layers, config.dilation)
+    
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model

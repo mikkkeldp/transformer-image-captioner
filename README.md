@@ -127,13 +127,13 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>CA Transformer</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
+        <td>CA Transformer*-</td>
+        <td>64.93</td>
+        <td>46.57</td>
+        <td>33.09</td>
+        <td>23.22</td>
+        <td>23.59</td>
+        <td>46.93</td>
     </tr>
   </table>
 
@@ -148,7 +148,7 @@ Note that models marked with * have not yet been hyperparameter tuned and are ex
 - [ ] MLR Transformer implementation
 - [ ] Beam search implementation
 - [ ] LM rescoring Transformer implementation
-- [ ] CA Transformer implementation
+- [x] CA Transformer implementation
 - [ ] Self-Critical Sequence Training (SCST) 
 
 ## 5. Usage<a name="5"></a> 

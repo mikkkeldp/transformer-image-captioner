@@ -3,10 +3,10 @@ class Config(object):
 
         # Learning Rates
         self.lr_backbone = 1e-5
-        self.lr = 0.0003
+        self.lr = 0.0001
 
         # Epochs
-        self.epochs = 20
+        self.epochs = 6
         self.lr_drop = 8
         self.start_epoch = 0
         self.weight_decay = 1e-4
@@ -21,16 +21,16 @@ class Config(object):
         self.seed = 42
         self.batch_size = 14 #change this to 14 if original checkpoints give error
         self.num_workers = 8
-        self.checkpoint = ''
+        self.checkpoint = './checkpoint_4.pth'
         self.clip_max_norm = 0.1
 
         # Transformer
-        self.hidden_dim = 256
+        self.hidden_dim = 256 #2048 projected to this dim
         self.pad_token_id = 0
         self.max_position_embeddings = 128
         self.layer_norm_eps = 1e-12
         self.dropout = 0.2
-        self.vocab_size = 8921 #8921, 7425, 30522
+        self.vocab_size = 30522 #8921, 7425, 30522
 
         self.enc_layers = 6
         self.dec_layers = 3
@@ -42,3 +42,6 @@ class Config(object):
         # Dataset
         self.dir = '../coco'
         self.limit = -1
+
+        # Improvements
+        self.aug_caps = True

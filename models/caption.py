@@ -11,8 +11,7 @@ class Caption(nn.Module):
     def __init__(self, backbone, transformer, hidden_dim, vocab_size):
         super().__init__()
         self.backbone = backbone
-        self.input_proj = nn.Conv2d(
-            backbone.num_channels, hidden_dim, kernel_size=1)
+        self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.transformer = transformer
         self.mlp = MLP(hidden_dim, 512, vocab_size, 3)
 
@@ -27,9 +26,10 @@ class Caption(nn.Module):
         src, mask = features[-1].decompose()
         assert mask is not None
         # print("FEATURES")
-        # print(src.shape)
-        # print(mask.shape)
+        # print("Source: ", src.shape)
+        # print("mask: ", mask.shape)
         proj = self.input_proj(src)
+        # print("projection: ")
         # print(proj.shape)
         hs = self.transformer(proj, mask,
                               pos[-1], target, target_mask)

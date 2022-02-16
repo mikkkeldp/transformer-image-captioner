@@ -1,4 +1,5 @@
 
+faster_rcnn_extracted_features/*
 dataset/*
 *.pth 
 *.pkl
