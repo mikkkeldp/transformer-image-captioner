@@ -160,8 +160,8 @@ for img in tqdm(testing_imgs):
         print("LONG")
     
     output = output[:index]
+    output.append(102)
     target = targets_dict[img]
-
     predicted.append(output)
     targets.append(target)
 

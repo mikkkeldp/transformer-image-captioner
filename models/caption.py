@@ -21,7 +21,6 @@ class Caption(nn.Module):
 
         features, pos = self.backbone(samples)
 
-        
 
         src, mask = features[-1].decompose()
         assert mask is not None
@@ -31,8 +30,9 @@ class Caption(nn.Module):
         proj = self.input_proj(src)
         # print("projection: ")
         # print(proj.shape)
-        hs = self.transformer(proj, mask,
-                              pos[-1], target, target_mask)
+
+        
+        hs = self.transformer(proj, mask, pos[-1], target, target_mask)
         out = self.mlp(hs.permute(1, 0, 2))
         return out
     

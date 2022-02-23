@@ -101,12 +101,12 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
         </tr>
         <td>Base Transformer*</td>
-        <td>64.96</td>
-        <td>46.29</td>
-        <td>32.60</td>
-        <td>22.78</td>
-        <td>23.16</td>
-        <td>45.98</td>
+        <td>68.49</td>
+        <td>51.15</td>
+        <td>35.82</td>
+        <td>25.25</td>
+        <td>27.43</td>
+        <td>47.79</td>
     </tr>
     </tr>
         <td>MLR Transformer</td>

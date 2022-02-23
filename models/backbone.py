@@ -7,7 +7,7 @@ import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
-
+import torchvision.models as models
 from .utils import NestedTensor, is_main_process
 
 from .position_encoding import build_position_encoding
@@ -62,6 +62,7 @@ class BackboneBase(nn.Module):
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         else:
             return_layers = {'layer4': "0"}
+
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
 
@@ -104,6 +105,73 @@ class Joiner(nn.Sequential):
             pos.append(self[1](x).to(x.tensors.dtype))
 
         return out, pos
+
+
+
+
+class SpatialEncoding(nn.Module):
+    """
+    Encodes bounding box coordinates and relative sizes
+    as vector of dimensionality `args.encoder_embed_dim`.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.linear = nn.Linear(361, 1024)
+
+    def forward(self, x):
+        return self.linear(x)
+
+
+class MyBackBone(nn.Module):
+
+    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+        super(MyBackBone, self).__init__()
+        self.image_encoder = models.resnet101(pretrained=True)  ##maybe try 152/101?
+        self.cnn = nn.Sequential(*list(self.image_encoder.children())[:-3])
+        self.num_channels = 1024
+        self.pos_embedding_lin = nn.Linear(256, 256)
+        # replace 2nd parameter with config hidden dim
+        self.input_proj = nn.Conv2d(1024, 256, kernel_size=1)
+
+    def forward(self, tensor_list: NestedTensor):
+        feat_vecs = self.cnn(tensor_list.tensors)
+        
+
+        # replace 1st and 2nd parameter with config 
+        print("FV:", feat_vecs.shape)
+        feat_vecs = self.input_proj(feat_vecs)
+        feat_vecs = feat_vecs.flatten(2)
+        feat_vecs = feat_vecs.permute(2,0,1)
+        print("FV:", feat_vecs.shape)
+       
+        # feat_vecs = torch.squeeze(feat_vecs, -1)
+        
+
+        # add multi-level stuff here
+
+                
+
+        # input masks
+        m = tensor_list.mask.flatten(1)
+        mask = F.interpolate(m[None].float(), size=feat_vecs.shape[0]).to(torch.bool)[0]
+        print("MASK: ", mask.shape)
+        # project feature vecs to smaller dimension
+
+
+
+        pos_emb = self.pos_embedding_lin(feat_vecs)
+        print("POS EMB: ", pos_emb.shape)
+        
+        return feat_vecs, mask, pos_emb
+
+# def build_backbone(config):
+#     position_embedding = build_position_encoding(config)
+#     train_backbone = config.lr_backbone > 0
+#     return_interm_layers = False
+#     model = MyBackBone(config.backbone, train_backbone, return_interm_layers, config.dilation)
+   
+#     return model
 
 
 def build_backbone(config):

@@ -41,6 +41,7 @@ class Transformer(nn.Module):
     def forward(self, src, mask, pos_embed, tgt, tgt_mask):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
+        bs = src.shape[0]
         src = src.flatten(2).permute(2, 0, 1)
         # print("SRC FLAT")
         # print(src.shape)

@@ -51,7 +51,8 @@ class Flickr8kTrainDataset(data.Dataset):
         caption = np.array(caption_encoded['input_ids'])
    
         cap_mask = (1 - np.array(caption_encoded['attention_mask'])).astype(bool)
-  
+       
+        
 
         return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask
 
