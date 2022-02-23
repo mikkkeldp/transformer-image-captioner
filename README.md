@@ -100,7 +100,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>49.2</td>
     </tr>
         </tr>
-        <td>Base Transformer*</td>
+        <td>Base Transformer</td>
         <td>68.49</td>
         <td>51.15</td>
         <td>35.82</td>
@@ -127,13 +127,13 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>CA Transformer*-</td>
-        <td>64.93</td>
-        <td>46.57</td>
-        <td>33.09</td>
-        <td>23.22</td>
-        <td>23.59</td>
-        <td>46.93</td>
+        <td>CA Transformer-</td>
+        <td>68.78</td>
+        <td>52.12</td>
+        <td>36.45</td>
+        <td>25.68</td>
+        <td>27.17</td>
+        <td>49.83</td>
     </tr>
   </table>
 
