@@ -1,6 +1,6 @@
 
 # choose checkpoints to test
-for i in {5..6};
+for i in {3..5};
 do
    : 
     echo "CHECKPOINT $i" 

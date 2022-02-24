@@ -3,7 +3,7 @@ class Config(object):
 
         # Learning Rates
         self.lr_backbone = 1e-5
-        self.lr = 0.0001
+        self.lr = 0.0003
 
         # Epochs
         self.epochs = 6
@@ -21,7 +21,7 @@ class Config(object):
         self.seed = 42
         self.batch_size = 14 #change this to 14 if original checkpoints give error
         self.num_workers = 8
-        self.checkpoint = './checkpoint_4.pth'
+        self.checkpoint = ''
         self.clip_max_norm = 0.1
 
         # Transformer

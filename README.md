@@ -127,7 +127,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>CA Transformer-</td>
+        <td>CA Transformer</td>
         <td>68.78</td>
         <td>52.12</td>
         <td>36.45</td>
@@ -137,7 +137,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
   </table>
 
-Note that models marked with * have not yet been hyperparameter tuned and are expected to improve.
+Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. The CA transformer has **6** encoder layers and **3** decoder layers (the opposite of what IC models trained on larger models use) and shows promising results.
 
 ## 4. Project TODO <a name="4"></a> 
 - [x] Fix tokenizer (30/1/2022)

@@ -15,6 +15,8 @@ from eval_func.rouge.rouge import Rouge
 from eval_func.cider.cider import Cider
 from eval_func.meteor.meteor import Meteor
 import nltk
+import numpy as np
+
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(f'Initializing Device: {device}')
@@ -90,22 +92,98 @@ def get_eval_score(references, hypotheses):
 
     return score_dict
 
+def greedy_search(image, caption, cap_mask):
+    
 
-@torch.no_grad()
-def evaluate(image, caption, cap_mask):
-    model.eval()
-    for i in range(config.max_position_embeddings - 1):
+    for i in range(config.max_position_embeddings - 1): #iterate rows of vocab_size x max_pos_embedding matrix
         predictions = model(image, caption, cap_mask)
+        
         predictions = predictions[:, i, :]
+        
         predicted_id = torch.argmax(predictions, axis=-1)
-
-        if predicted_id[0] == 102: #18 for custom vocab, 102 for bert
+        
+        if predicted_id[0] == 102: # END OF SEQUENCE TOKEN
             return caption
-
+        print("PRED ID: ", predicted_id[0])
         caption[:, i+1] = predicted_id[0]
         cap_mask[:, i+1] = False
 
     return caption
+
+
+def beam_search(image, caption, cap_mask, k ):
+
+    sequences = []
+    predictions = model(image, caption, cap_mask)
+    predictions = predictions[:, 0, :]
+    scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
+    scores = scores[0]
+    predicted_ids = predicted_ids[0]
+    print("scores: ", scores)
+    print("PIDS: ", predicted_ids)
+    # setup initial beams
+
+    for j in range(k):
+        
+        candidate_seq = torch.clone(caption)
+        candidate_seq[:, 1] = predicted_ids[j]
+
+        candidate_cap_mask = cap_mask
+        candidate_cap_mask[:, 1] = False
+
+        candidate = [candidate_seq, scores[j], candidate_cap_mask]
+        sequences.append(candidate)
+        
+    print(sequences)
+    print("******************** \n FIRST LOOP DONE \n ******************\n\n\n\n\n")
+    for i in range(2,config.max_position_embeddings -1):
+        new_seqs = []
+        for j in range(k): #for every candidate in sequence list
+            new_caption = torch.clone(sequences[j][0])
+            new_score = torch.clone(sequences[j][1])
+            new_cap_mask = torch.clone(sequences[j][2])
+
+            new_predictions = model(image, new_caption, new_cap_mask)
+            new_predictions = new_predictions[:, i, :] #i+1 since we already set the first beam search manually
+            new_scores, new_predicted_ids = torch.topk(new_predictions, k=k,  dim=-1)
+            new_scores = new_scores[0]
+            
+            new_predicted_ids = new_predicted_ids[0]
+
+            for l in range(k):
+                new_caption[:, i] = new_predicted_ids[l]
+                new_cap_mask[:, i] = False
+                new_score += new_scores[l]
+                new_candidate = [new_caption, new_score, new_cap_mask]
+                new_seqs.append(new_candidate)
+
+        print(new_seqs)
+        break
+
+
+    # for i in range(config.max_position_embeddings - 1):  #iterate rows of vocab_size x max_pos_embedding matrix
+    #     all_candidates = list()
+
+    #     # expand each candidate 
+    #     for j in range (len(sequences)):
+
+    #         seq, score = sequences[j]
+
+    #         for r in range(k): 
+    #             predictions = model(image, caption, cap_mask)
+                
+                
+    #             predictions = predictions[:, i, :]
+    #             scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
+
+            
+    return None
+
+@torch.no_grad()
+def evaluate(image, caption, cap_mask):
+    model.eval()
+    # return greedy_search(image, caption, cap_mask)
+    return beam_search(image, caption, cap_mask, 3)
 
 
 dataset_path = "./dataset/Flickr8k_Dataset"
