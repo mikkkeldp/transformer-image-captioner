@@ -146,7 +146,7 @@ Note that models marked with * have not yet been hyperparameter tuned and are ex
 - [x] Optimize Transformer for smaller datasets (8/2/2022)
 - [x] Use custom vocab instead of Bert (recommended for limited datasets, able to limit vocab) (9/2/2022)
 - [ ] MLR Transformer implementation
-- [ ] Beam search implementation
+- [x] Beam search implementation (20/2/2022)
 - [ ] LM rescoring Transformer implementation
 - [x] CA Transformer implementation
 - [ ] Self-Critical Sequence Training (SCST) 

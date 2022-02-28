@@ -16,7 +16,7 @@ from eval_func.cider.cider import Cider
 from eval_func.meteor.meteor import Meteor
 import nltk
 import numpy as np
-
+import math
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(f'Initializing Device: {device}')
@@ -104,13 +104,26 @@ def greedy_search(image, caption, cap_mask):
         
         if predicted_id[0] == 102: # END OF SEQUENCE TOKEN
             return caption
-        print("PRED ID: ", predicted_id[0])
+        # print("PRED ID: ", predicted_id[0])
         caption[:, i+1] = predicted_id[0]
         cap_mask[:, i+1] = False
 
     return caption
 
+def show_beam(sequences):
+    for i in range(len(sequences)):
+        caption = sequences[i][0].cpu().detach().numpy()[0]
+        index = np.where(caption == 0)[0][0]
 
+        caption = caption[:index]
+        length = len(caption) - 1 #discard start token
+        caption = tokenizer.decode(caption,skip_special_tokens=True)
+         # caption = tokenizer.convert_ids_to_tokens(caption)
+        score = sequences[i][1].cpu().detach().numpy()
+        
+        print("c ", i , ":", caption, ". len: ", length, "\t score: ", score)
+    print("\n")
+    
 def beam_search(image, caption, cap_mask, k ):
 
     sequences = []
@@ -119,10 +132,7 @@ def beam_search(image, caption, cap_mask, k ):
     scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
     scores = scores[0]
     predicted_ids = predicted_ids[0]
-    print("scores: ", scores)
-    print("PIDS: ", predicted_ids)
-    # setup initial beams
-
+  
     for j in range(k):
         
         candidate_seq = torch.clone(caption)
@@ -130,54 +140,83 @@ def beam_search(image, caption, cap_mask, k ):
 
         candidate_cap_mask = cap_mask
         candidate_cap_mask[:, 1] = False
-
-        candidate = [candidate_seq, scores[j], candidate_cap_mask]
-        sequences.append(candidate)
+      
+        complete = False
+        candidate = [candidate_seq, scores[j], candidate_cap_mask, complete]
         
-    print(sequences)
-    print("******************** \n FIRST LOOP DONE \n ******************\n\n\n\n\n")
-    for i in range(2,config.max_position_embeddings -1):
+        sequences.append(candidate)
+    # show_beam(sequences)
+
+    for i in range(1, config.max_position_embeddings -1):
         new_seqs = []
         for j in range(k): #for every candidate in sequence list
-            new_caption = torch.clone(sequences[j][0])
-            new_score = torch.clone(sequences[j][1])
-            new_cap_mask = torch.clone(sequences[j][2])
-
+            new_caption = sequences[j][0].clone()
+            new_score = sequences[j][1].clone()
+            new_cap_mask = sequences[j][2].clone()
+            new_completed = sequences[j][3] 
             new_predictions = model(image, new_caption, new_cap_mask)
-            new_predictions = new_predictions[:, i, :] #i+1 since we already set the first beam search manually
+            new_predictions = new_predictions[:, i, :] 
             new_scores, new_predicted_ids = torch.topk(new_predictions, k=k,  dim=-1)
             new_scores = new_scores[0]
-            
+        
             new_predicted_ids = new_predicted_ids[0]
-
+            completes = False
             for l in range(k):
-                new_caption[:, i] = new_predicted_ids[l]
-                new_cap_mask[:, i] = False
-                new_score += new_scores[l]
-                new_candidate = [new_caption, new_score, new_cap_mask]
+                if new_completed == True:
+                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
+                    new_seqs.append(new_candidate)
+                    break
+                else:  # if not complted, continue updating, if not, keep the same
+                    # new_caption[:, i] = new_predicted_ids[l]
+                    new_caption[:, i+1] = new_predicted_ids[l]
+                    new_cap_mask[:, i+1] = False
+                    new_score += new_scores[l]
+                    if new_predicted_ids[l] == 1012:
+                        completes = True
+                        # print("end of sentence reached!")
+                   
+                    
+                    if completes:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
+                    else:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
+                completes = False
                 new_seqs.append(new_candidate)
 
-        print(new_seqs)
-        break
+            del new_caption
+            del new_score 
+            del new_cap_mask
+            del new_predicted_ids
+            del new_scores
+            torch.cuda.empty_cache() 
 
+        new_seqs = sorted(new_seqs, key=lambda tup:tup[1], reverse=True)
+        # show_beam(new_seqs)
+        # print("sorted")
+        new_seqs = new_seqs[:k]
+        sequences = new_seqs
+        # print("\n\n ********* ")
+        # print(sequences)
+        # print("\n\n ********* ")
+        # check if all beams are completed
+        all_completed = True
+        # show_beam(sequences)
+        for x in range(k):
+            if sequences[x][3] == False: all_completed = False 
+        
+        if all_completed: 
+            # print("\n\n ********* ")
+            # show_beam(sequences)
+            # print("\n\n ********* ")
+            return sequences[0][0]
+        if i > 20:
+            # show_beam(sequences)
+            # print("***************** \n\n\n\n  MAX LENGTH REACHED \n\n\n\n")
+            return sequences[0][0]
+        
+    return sequences[0][0]
+        
 
-    # for i in range(config.max_position_embeddings - 1):  #iterate rows of vocab_size x max_pos_embedding matrix
-    #     all_candidates = list()
-
-    #     # expand each candidate 
-    #     for j in range (len(sequences)):
-
-    #         seq, score = sequences[j]
-
-    #         for r in range(k): 
-    #             predictions = model(image, caption, cap_mask)
-                
-                
-    #             predictions = predictions[:, i, :]
-    #             scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
-
-            
-    return None
 
 @torch.no_grad()
 def evaluate(image, caption, cap_mask):
@@ -230,6 +269,7 @@ for img in tqdm(testing_imgs):
 
     output = evaluate(image, caption, cap_mask)
     output = output[0].tolist()
+   
 
     try:
         index = output.index(0)
@@ -240,6 +280,8 @@ for img in tqdm(testing_imgs):
     output = output[:index]
     output.append(102)
     target = targets_dict[img]
+    print(target)
+    print(output)
     predicted.append(output)
     targets.append(target)
 
