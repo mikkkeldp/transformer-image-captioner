@@ -15,6 +15,8 @@ from eval_func.rouge.rouge import Rouge
 from eval_func.cider.cider import Cider
 from eval_func.meteor.meteor import Meteor
 import nltk
+import numpy as np
+import math
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(f'Initializing Device: {device}')
@@ -90,22 +92,132 @@ def get_eval_score(references, hypotheses):
 
     return score_dict
 
+def greedy_search(image, caption, cap_mask):
+    
 
-@torch.no_grad()
-def evaluate(image, caption, cap_mask):
-    model.eval()
-    for i in range(config.max_position_embeddings - 1):
+    for i in range(config.max_position_embeddings - 1): #iterate rows of vocab_size x max_pos_embedding matrix
         predictions = model(image, caption, cap_mask)
+        
         predictions = predictions[:, i, :]
+        
         predicted_id = torch.argmax(predictions, axis=-1)
-
-        if predicted_id[0] == 102: #18 for custom vocab, 102 for bert
+        
+        if predicted_id[0] == 102: # END OF SEQUENCE TOKEN
             return caption
-
+       
         caption[:, i+1] = predicted_id[0]
         cap_mask[:, i+1] = False
 
     return caption
+
+
+"""
+Beam search debugging util:
+
+prints all current beams decoded and associated scores
+"""
+def show_beam(sequences):
+    for i in range(len(sequences)):
+        caption = sequences[i][0].cpu().detach().numpy()[0]
+        index = np.where(caption == 0)[0][0]
+
+        caption = caption[:index]
+        length = len(caption) - 1 #discard start token
+        caption = tokenizer.decode(caption,skip_special_tokens=True)
+         # caption = tokenizer.convert_ids_to_tokens(caption)
+        score = sequences[i][1].cpu().detach().numpy()
+        
+        print("c ", i , ":", caption, ". len: ", length, "\t score: ", score)
+    print("\n")
+
+def beam_search(image, caption, cap_mask, k ):
+
+    sequences = []
+    predictions = model(image, caption, cap_mask)
+    predictions = predictions[:, 0, :]
+    scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
+    scores = scores[0]
+    predicted_ids = predicted_ids[0]
+  
+    for j in range(k):
+        
+        candidate_seq = torch.clone(caption)
+        candidate_seq[:, 1] = predicted_ids[j]
+
+        candidate_cap_mask = cap_mask
+        candidate_cap_mask[:, 1] = False
+      
+        complete = False
+        candidate = [candidate_seq, scores[j], candidate_cap_mask, complete]
+        
+        sequences.append(candidate)
+  
+
+    for i in range(1, config.max_position_embeddings -1):
+        new_seqs = []
+        for j in range(k): #for every candidate in sequence list
+            new_caption = sequences[j][0].clone()
+            new_score = sequences[j][1].clone()
+            new_cap_mask = sequences[j][2].clone()
+            new_completed = sequences[j][3] 
+            new_predictions = model(image, new_caption, new_cap_mask)
+            new_predictions = new_predictions[:, i, :] 
+            new_scores, new_predicted_ids = torch.topk(new_predictions, k=k,  dim=-1)
+            new_scores = new_scores[0]
+        
+            new_predicted_ids = new_predicted_ids[0]
+            for l in range(k):
+                if new_completed == True:
+                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
+                    new_seqs.append(new_candidate)
+                    break
+                else:  # if not complted, continue updating, if not, keep the same
+                    new_caption[:, i+1] = new_predicted_ids[l]
+                    new_cap_mask[:, i+1] = False
+                    new_score += new_scores[l]
+                    if new_predicted_ids[l] == 1012:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
+                    else:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
+             
+                new_seqs.append(new_candidate)
+
+            # FREE UP MEMORY
+            del new_caption
+            del new_score 
+            del new_cap_mask
+            del new_predicted_ids
+            del new_scores
+            torch.cuda.empty_cache() 
+
+        new_seqs = sorted(new_seqs, key=lambda tup:tup[1], reverse=True)
+        new_seqs = new_seqs[:k]
+        sequences = new_seqs
+        
+        all_completed = True
+        # check if all beams completed. halt search and return top candidate
+        for x in range(k):
+            if sequences[x][3] == False: all_completed = False 
+        
+        if all_completed: 
+            # show_beam(sequences)
+            return sequences[0][0]
+
+        if i > 20:
+            # show_beam(sequences)
+            print("long")
+            return sequences[0][0]
+        
+    return sequences[0][0]
+        
+
+
+@torch.no_grad()
+def evaluate(image, caption, cap_mask):
+    model.eval()
+  
+    # return greedy_search(image, caption, cap_mask)
+    return beam_search(image, caption, cap_mask, config.beam_width)
 
 
 dataset_path = "./dataset/Flickr8k_Dataset"
@@ -141,7 +253,7 @@ predicted = []
 for img in tqdm(testing_imgs):
 
     img_path = dataset_path + "/" + img
-    image = Image.open(img_path)        #
+    image = Image.open(img_path)        
     image = transform(image)
     image = image.unsqueeze(0)
 
@@ -152,6 +264,7 @@ for img in tqdm(testing_imgs):
 
     output = evaluate(image, caption, cap_mask)
     output = output[0].tolist()
+   
 
     try:
         index = output.index(0)
@@ -162,6 +275,7 @@ for img in tqdm(testing_imgs):
     output = output[:index]
     output.append(102)
     target = targets_dict[img]
+
     predicted.append(output)
     targets.append(target)
 

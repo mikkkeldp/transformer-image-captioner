@@ -108,6 +108,16 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>27.43</td>
         <td>47.79</td>
     </tr>
+     </tr>
+        </tr>
+        <td>Base Transformer Beam search width 3 </td>
+        <td>68.62</td>
+        <td>51.60</td>
+        <td>35.89</td>
+        <td>25.32</td>
+        <td>27.41</td>
+        <td>47.83</td>
+    </tr>
     </tr>
         <td>MLR Transformer</td>
         <td>-</td>
@@ -127,7 +137,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>CA Transformer-</td>
+        <td>CA Transformer</td>
         <td>68.78</td>
         <td>52.12</td>
         <td>36.45</td>
@@ -137,7 +147,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
   </table>
 
-Note that models marked with * have not yet been hyperparameter tuned and are expected to improve.
+Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. The CA transformer has **6** encoder layers and **3** decoder layers (the opposite of what IC models trained on larger models use) and shows promising results. 
 
 ## 4. Project TODO <a name="4"></a> 
 - [x] Fix tokenizer (30/1/2022)
@@ -146,7 +156,7 @@ Note that models marked with * have not yet been hyperparameter tuned and are ex
 - [x] Optimize Transformer for smaller datasets (8/2/2022)
 - [x] Use custom vocab instead of Bert (recommended for limited datasets, able to limit vocab) (9/2/2022)
 - [ ] MLR Transformer implementation
-- [ ] Beam search implementation
+- [x] Beam search implementation (20/2/2022)
 - [ ] LM rescoring Transformer implementation
 - [x] CA Transformer implementation
 - [ ] Self-Critical Sequence Training (SCST) 
