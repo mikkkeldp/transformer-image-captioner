@@ -19,7 +19,7 @@ class Config(object):
         # Basic
         self.device = 'cuda:0'
         self.seed = 42
-        self.batch_size = 14 #change this to 14 if original checkpoints give error
+        self.batch_size = 14 
         self.num_workers = 8
         self.checkpoint = './checkpoint_11.pth'
         self.clip_max_norm = 0.1
@@ -30,7 +30,7 @@ class Config(object):
         self.max_position_embeddings = 128
         self.layer_norm_eps = 1e-12
         self.dropout = 0.2
-        self.vocab_size = 30522 #8921, 7425, 30522
+        self.vocab_size = 30522 
 
         self.enc_layers = 3
         self.dec_layers = 6
@@ -40,5 +40,10 @@ class Config(object):
         self.load_pretrained_weights = False
 
         # Dataset
-        self.dir = '../coco'
+        self.dir = '../flickr8k'
         self.limit = -1
+
+
+        #Improvements 
+        self.aug_caps = False
+        self.beam_width = 5

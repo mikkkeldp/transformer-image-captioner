@@ -104,12 +104,18 @@ def greedy_search(image, caption, cap_mask):
         
         if predicted_id[0] == 102: # END OF SEQUENCE TOKEN
             return caption
-        # print("PRED ID: ", predicted_id[0])
+       
         caption[:, i+1] = predicted_id[0]
         cap_mask[:, i+1] = False
 
     return caption
 
+
+"""
+Beam search debugging util:
+
+prints all current beams decoded and associated scores
+"""
 def show_beam(sequences):
     for i in range(len(sequences)):
         caption = sequences[i][0].cpu().detach().numpy()[0]
@@ -123,7 +129,7 @@ def show_beam(sequences):
         
         print("c ", i , ":", caption, ". len: ", length, "\t score: ", score)
     print("\n")
-    
+
 def beam_search(image, caption, cap_mask, k ):
 
     sequences = []
@@ -145,7 +151,7 @@ def beam_search(image, caption, cap_mask, k ):
         candidate = [candidate_seq, scores[j], candidate_cap_mask, complete]
         
         sequences.append(candidate)
-    # show_beam(sequences)
+  
 
     for i in range(1, config.max_position_embeddings -1):
         new_seqs = []
@@ -160,29 +166,23 @@ def beam_search(image, caption, cap_mask, k ):
             new_scores = new_scores[0]
         
             new_predicted_ids = new_predicted_ids[0]
-            completes = False
             for l in range(k):
                 if new_completed == True:
                     new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
                     new_seqs.append(new_candidate)
                     break
                 else:  # if not complted, continue updating, if not, keep the same
-                    # new_caption[:, i] = new_predicted_ids[l]
                     new_caption[:, i+1] = new_predicted_ids[l]
                     new_cap_mask[:, i+1] = False
                     new_score += new_scores[l]
                     if new_predicted_ids[l] == 1012:
-                        completes = True
-                        # print("end of sentence reached!")
-                   
-                    
-                    if completes:
                         new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
                     else:
                         new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
-                completes = False
+             
                 new_seqs.append(new_candidate)
 
+            # FREE UP MEMORY
             del new_caption
             del new_score 
             del new_cap_mask
@@ -191,27 +191,21 @@ def beam_search(image, caption, cap_mask, k ):
             torch.cuda.empty_cache() 
 
         new_seqs = sorted(new_seqs, key=lambda tup:tup[1], reverse=True)
-        # show_beam(new_seqs)
-        # print("sorted")
         new_seqs = new_seqs[:k]
         sequences = new_seqs
-        # print("\n\n ********* ")
-        # print(sequences)
-        # print("\n\n ********* ")
-        # check if all beams are completed
+        
         all_completed = True
-        # show_beam(sequences)
+        # check if all beams completed. halt search and return top candidate
         for x in range(k):
             if sequences[x][3] == False: all_completed = False 
         
         if all_completed: 
-            # print("\n\n ********* ")
             # show_beam(sequences)
-            # print("\n\n ********* ")
             return sequences[0][0]
+
         if i > 20:
             # show_beam(sequences)
-            # print("***************** \n\n\n\n  MAX LENGTH REACHED \n\n\n\n")
+            print("long")
             return sequences[0][0]
         
     return sequences[0][0]
@@ -221,8 +215,9 @@ def beam_search(image, caption, cap_mask, k ):
 @torch.no_grad()
 def evaluate(image, caption, cap_mask):
     model.eval()
+  
     # return greedy_search(image, caption, cap_mask)
-    return beam_search(image, caption, cap_mask, 3)
+    return beam_search(image, caption, cap_mask, config.beam_width)
 
 
 dataset_path = "./dataset/Flickr8k_Dataset"
@@ -258,7 +253,7 @@ predicted = []
 for img in tqdm(testing_imgs):
 
     img_path = dataset_path + "/" + img
-    image = Image.open(img_path)        #
+    image = Image.open(img_path)        
     image = transform(image)
     image = image.unsqueeze(0)
 
@@ -280,8 +275,7 @@ for img in tqdm(testing_imgs):
     output = output[:index]
     output.append(102)
     target = targets_dict[img]
-    print(target)
-    print(output)
+
     predicted.append(output)
     targets.append(target)
 
