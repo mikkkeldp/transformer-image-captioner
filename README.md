@@ -119,6 +119,16 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>47.83</td>
     </tr>
     </tr>
+        </tr>
+        <td>Base Transformer Beam search width 5 </td>
+        <td>67.04</td>
+        <td>49.32</td>
+        <td>33.23</td>
+        <td>22.79</td>
+        <td>25.72</td>
+        <td>41.35</td>
+    </tr>
+    </tr>
         <td>MLR Transformer</td>
         <td>-</td>
         <td>-</td>
@@ -128,13 +138,13 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>LM rescoring Transformer</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
+        <td>LM rescoring Transformer (beam width of 5 and influence weight of 0.8)*</td>
+        <td>67.26</td>
+        <td>49.38</td>
+        <td>33.14</td>
+        <td>22.66</td>
+        <td>25.86</td>
+        <td>40.86</td>
     </tr>
     </tr>
         <td>CA Transformer</td>
@@ -157,7 +167,7 @@ Note that models marked with * have not yet been hyperparameter tuned and are ex
 - [x] Use custom vocab instead of Bert (recommended for limited datasets, able to limit vocab) (9/2/2022)
 - [ ] MLR Transformer implementation
 - [x] Beam search implementation (20/2/2022)
-- [ ] LM rescoring Transformer implementation
+- [x] LM rescoring Transformer implementation (28/2/2022)
 - [x] CA Transformer implementation
 - [ ] Self-Critical Sequence Training (SCST) 
 

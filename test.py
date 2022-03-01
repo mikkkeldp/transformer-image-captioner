@@ -17,6 +17,7 @@ from eval_func.meteor.meteor import Meteor
 import nltk
 import numpy as np
 import math
+from language_model_rescoring import get_score
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(f'Initializing Device: {device}')
@@ -130,7 +131,7 @@ def show_beam(sequences):
         print("c ", i , ":", caption, ". len: ", length, "\t score: ", score)
     print("\n")
 
-def beam_search(image, caption, cap_mask, k ):
+def beam_search(image, caption, cap_mask, k):
 
     sequences = []
     predictions = model(image, caption, cap_mask)
@@ -140,48 +141,43 @@ def beam_search(image, caption, cap_mask, k ):
     predicted_ids = predicted_ids[0]
   
     for j in range(k):
-        
         candidate_seq = torch.clone(caption)
         candidate_seq[:, 1] = predicted_ids[j]
-
         candidate_cap_mask = cap_mask
         candidate_cap_mask[:, 1] = False
-      
-        complete = False
-        candidate = [candidate_seq, scores[j], candidate_cap_mask, complete]
-        
+        candidate = [candidate_seq, scores[j], candidate_cap_mask]
         sequences.append(candidate)
   
-
+    completed_seqs = []
     for i in range(1, config.max_position_embeddings -1):
         new_seqs = []
-        for j in range(k): #for every candidate in sequence list
+        for j in range(k): #for every beam in sequence list
             new_caption = sequences[j][0].clone()
             new_score = sequences[j][1].clone()
             new_cap_mask = sequences[j][2].clone()
-            new_completed = sequences[j][3] 
+        
             new_predictions = model(image, new_caption, new_cap_mask)
             new_predictions = new_predictions[:, i, :] 
             new_scores, new_predicted_ids = torch.topk(new_predictions, k=k,  dim=-1)
-            new_scores = new_scores[0]
-        
-            new_predicted_ids = new_predicted_ids[0]
-            for l in range(k):
-                if new_completed == True:
-                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
-                    new_seqs.append(new_candidate)
-                    break
-                else:  # if not complted, continue updating, if not, keep the same
-                    new_caption[:, i+1] = new_predicted_ids[l]
-                    new_cap_mask[:, i+1] = False
-                    new_score += new_scores[l]
-                    if new_predicted_ids[l] == 1012:
-                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
-                    else:
-                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), new_completed]
-             
-                new_seqs.append(new_candidate)
 
+            new_scores = new_scores[0]
+            new_predicted_ids = new_predicted_ids[0]
+
+            for l in range(k): #expand each beam 
+                # print("B ", l)
+
+                
+                new_caption[:, i+1] = new_predicted_ids[l]
+                new_cap_mask[:, i+1] = False
+                new_score += new_scores[l]
+                if new_predicted_ids[l] == 1012:
+                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
+                    completed_seqs.append(new_candidate)
+                    continue
+                else:
+                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), False]
+                    new_seqs.append(new_candidate)
+                
             # FREE UP MEMORY
             del new_caption
             del new_score 
@@ -189,33 +185,41 @@ def beam_search(image, caption, cap_mask, k ):
             del new_predicted_ids
             del new_scores
             torch.cuda.empty_cache() 
-
+            
+            
+        # show_beam(new_seqs)
         new_seqs = sorted(new_seqs, key=lambda tup:tup[1], reverse=True)
         new_seqs = new_seqs[:k]
         sequences = new_seqs
         
-        all_completed = True
-        # check if all beams completed. halt search and return top candidate
-        for x in range(k):
-            if sequences[x][3] == False: all_completed = False 
-        
-        if all_completed: 
-            # show_beam(sequences)
-            return sequences[0][0]
+        if len(completed_seqs) >= k:
+            # show_beam(completed_seqs)
+            # LM rescoring
+            for i in range(len(completed_seqs)):
+                caption = completed_seqs[i][0].cpu().detach().numpy()[0]
+                index = np.where(caption == 0)[0][0]
 
-        if i > 20:
-            # show_beam(sequences)
-            print("long")
-            return sequences[0][0]
-        
-    return sequences[0][0]
+                caption = caption[:index]
+                caption = tokenizer.decode(caption,skip_special_tokens=True)
+                lm_score = get_score(caption)
+
+                completed_seqs[i][1] -= 0.8*lm_score
+
+
+            completed_seqs = sorted(completed_seqs, key=lambda tup:tup[1], reverse=True)
+            # show_beam(completed_seqs)
+            # print("\n\n **** \n\n")
+            return completed_seqs[0][0]
+
+    # show_beam(completed_seqs)
+    return completed_seqs[0][0]
         
 
 
 @torch.no_grad()
 def evaluate(image, caption, cap_mask):
     model.eval()
-  
+
     # return greedy_search(image, caption, cap_mask)
     return beam_search(image, caption, cap_mask, config.beam_width)
 

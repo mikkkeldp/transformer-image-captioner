@@ -46,4 +46,4 @@ class Config(object):
 
         #Improvements 
         self.aug_caps = False
-        self.beam_width = 5
+        self.beam_width = 8
