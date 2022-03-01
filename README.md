@@ -108,26 +108,6 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>27.43</td>
         <td>47.79</td>
     </tr>
-     </tr>
-        </tr>
-        <td>Base Transformer Beam search width 3 </td>
-        <td>68.62</td>
-        <td>51.60</td>
-        <td>35.89</td>
-        <td>25.32</td>
-        <td>27.41</td>
-        <td>47.83</td>
-    </tr>
-    </tr>
-        </tr>
-        <td>Base Transformer Beam search width 5 </td>
-        <td>67.04</td>
-        <td>49.32</td>
-        <td>33.23</td>
-        <td>22.79</td>
-        <td>25.72</td>
-        <td>41.35</td>
-    </tr>
     </tr>
         <td>MLR Transformer</td>
         <td>-</td>
@@ -138,7 +118,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>-</td>
     </tr>
     </tr>
-        <td>LM rescoring Transformer (beam width of 5 and influence weight of 0.8)*</td>
+        <td>LM rescoring Transformer*</td>
         <td>67.26</td>
         <td>49.38</td>
         <td>33.14</td>
@@ -157,7 +137,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
   </table>
 
-Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. The CA transformer has **6** encoder layers and **3** decoder layers (the opposite of what IC models trained on larger models use) and shows promising results. 
+Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. The CA transformer has **6** encoder layers and **3** decoder layers (the opposite of what IC models trained on larger models use) and shows promising results. Language model (LM) rescoring seems to produce worse results than without, however, there seems to be a bug with our implementation of the beam search. This is to be investigated...
 
 ## 4. Project TODO <a name="4"></a> 
 - [x] Fix tokenizer (30/1/2022)
