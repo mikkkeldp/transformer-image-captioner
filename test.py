@@ -127,10 +127,31 @@ def show_beam(sequences):
         caption = tokenizer.decode(caption,skip_special_tokens=True)
          # caption = tokenizer.convert_ids_to_tokens(caption)
         score = sequences[i][1].cpu().detach().numpy()
-        
-        print("c ", i , ":", caption, ". len: ", length, "\t score: ", score)
+        complete = sequences[i][3]
+        print("c ", i , ":", caption, ". len: ", length, "\t score: ", score, " ", complete)
     print("\n")
 
+'''
+Rescore beam search candidates with the aid of a language model
+
+'''
+def rescore_sequences(sequences, influence):
+    for i in range(len(sequences)):
+        caption = sequences[i][0].cpu().detach().numpy()[0]
+        index = np.where(caption == 0)[0][0]
+
+        caption = caption[:index]
+        caption = tokenizer.decode(caption,skip_special_tokens=True)
+        lm_score = get_score(caption)
+
+        sequences[i][1] -= influence*lm_score
+
+    return sequences
+
+
+"""
+Beam search implementation, k number of beams
+"""
 def beam_search(image, caption, cap_mask, k):
 
     sequences = []
@@ -145,84 +166,84 @@ def beam_search(image, caption, cap_mask, k):
         candidate_seq[:, 1] = predicted_ids[j]
         candidate_cap_mask = cap_mask
         candidate_cap_mask[:, 1] = False
-        candidate = [candidate_seq, scores[j], candidate_cap_mask]
+        completed = False
+        candidate = [candidate_seq, scores[j], candidate_cap_mask, completed]
         sequences.append(candidate)
   
-    completed_seqs = []
+    
     for i in range(1, config.max_position_embeddings -1):
         new_seqs = []
         for j in range(k): #for every beam in sequence list
             new_caption = sequences[j][0].clone()
             new_score = sequences[j][1].clone()
             new_cap_mask = sequences[j][2].clone()
-        
-            new_predictions = model(image, new_caption, new_cap_mask)
-            new_predictions = new_predictions[:, i, :] 
-            new_scores, new_predicted_ids = torch.topk(new_predictions, k=k,  dim=-1)
+            new_complete = sequences[j][3]
 
-            new_scores = new_scores[0]
-            new_predicted_ids = new_predicted_ids[0]
 
-            for l in range(k): #expand each beam 
-                # print("B ", l)
+            if new_complete:
+                new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
+                new_seqs.append(new_candidate)
+            else:
+                new_predictions = model(image, new_caption, new_cap_mask)
+                new_predictions = new_predictions[:, i, :] 
+                new_scores, new_predicted_ids = torch.topk(new_predictions, k=k+1,  dim=-1)
 
+                new_scores = new_scores[0]
+                new_predicted_ids = new_predicted_ids[0]
+
+                # remove 102 tokens, thats why we get k+1 top tokens, and remove 102 if present
+                nx = new_predicted_ids.cpu().numpy()
+                index = np.where(nx == 102)[0]
+                if index:
+                    new_predicted_ids = torch.cat([new_predicted_ids[0:index[0]], new_predicted_ids[index[0]+1:]])
+
+                for l in range(k): #expand each beam 
+                    new_caption[:, i+1] = new_predicted_ids[l]
+                    new_cap_mask[:, i+1] = False
+                    new_score += new_scores[l]
+                    if new_predicted_ids[l] == 1012 or new_predicted_ids[l] == 102:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
+                        new_seqs.append(new_candidate)
+                    
+                    else:
+                        new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), False]
+                        new_seqs.append(new_candidate)
                 
-                new_caption[:, i+1] = new_predicted_ids[l]
-                new_cap_mask[:, i+1] = False
-                new_score += new_scores[l]
-                if new_predicted_ids[l] == 1012:
-                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
-                    completed_seqs.append(new_candidate)
-                    continue
-                else:
-                    new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), False]
-                    new_seqs.append(new_candidate)
-                
-            # FREE UP MEMORY
-            del new_caption
-            del new_score 
-            del new_cap_mask
-            del new_predicted_ids
-            del new_scores
-            torch.cuda.empty_cache() 
             
-            
-        # show_beam(new_seqs)
+        # sort beams and keep top k beams
         new_seqs = sorted(new_seqs, key=lambda tup:tup[1], reverse=True)
         new_seqs = new_seqs[:k]
         sequences = new_seqs
-        
-        if len(completed_seqs) >= k:
-            # show_beam(completed_seqs)
-            # LM rescoring
-            for i in range(len(completed_seqs)):
-                caption = completed_seqs[i][0].cpu().detach().numpy()[0]
-                index = np.where(caption == 0)[0][0]
+     
 
-                caption = caption[:index]
-                caption = tokenizer.decode(caption,skip_special_tokens=True)
-                lm_score = get_score(caption)
+        all_completed = True
+        for seq in sequences:
+            if seq[3] == False: all_completed = False
 
-                completed_seqs[i][1] -= 0.8*lm_score
+        if all_completed:
+            if config.lm_scoring:
+                sequences = rescore_sequences(sequences, config.lm_influence)
+            return sequences[0][0]
 
 
-            completed_seqs = sorted(completed_seqs, key=lambda tup:tup[1], reverse=True)
-            # show_beam(completed_seqs)
-            # print("\n\n **** \n\n")
-            return completed_seqs[0][0]
+    print("MAX")
+  
+    if config.lm_scoring:
+        sequences = rescore_sequences(sequences, config.lm_influence)
+    return sequences[0][0]
 
-    # show_beam(completed_seqs)
-    return completed_seqs[0][0]
+
         
 
 
 @torch.no_grad()
 def evaluate(image, caption, cap_mask):
     model.eval()
-
-    # return greedy_search(image, caption, cap_mask)
-    return beam_search(image, caption, cap_mask, config.beam_width)
-
+    if config.beam_width == 1:
+        return greedy_search(image, caption, cap_mask)
+    else:
+        return beam_search(image, caption, cap_mask, config.beam_width)
+    # return n_beam_search(image, caption, cap_mask, config.beam_width)
 
 dataset_path = "./dataset/Flickr8k_Dataset"
 dataset_test_paths = "./dataset/Flickr_8k.testImages.txt"
@@ -251,6 +272,10 @@ for caption in target_captions:
             targets_dict[id] = [tokens]
         else:
             targets_dict[id].append(tokens)
+
+
+
+
 
 targets = []
 predicted = []

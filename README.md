@@ -1,8 +1,11 @@
 # Transformer image captioning 
 
-This project implements a Transformer-based image captioning model. We aim at training an image captioning network in a low-resource regime. We make use of the Flickr8k dataset consisting of 30,000 image-caption pairs. This is still a work in progress and is inspired by the following papers:
+This project implements a Transformer-based image captioning model. We aim at training an image captioning network in a low-resource regime. We make use of the Flickr8k dataset consisting of 30,000 image-caption pairs. This is still a work in progress. 
 
-<table>
+
+<!-- and is inspired by the following papers: -->
+
+<!-- <table>
   <tr>
     <td valign="top">[1]</td>
     <td>Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, and Illia Polosukhin. <a href="https://arxiv.org/abs/1612.00563">Attention is all you need</a>. In <i>Advances in neural information processing systems</i>, pages 5998–6008, 2017.</td>
@@ -18,7 +21,7 @@ This project implements a Transformer-based image captioning model. We aim at tr
   </tr>
     <td valign="top">[4]</td>
     <td>Steven J. Rennie, Etienne Marcheret, Youssef Mroueh, Jarret Ross, Vaibhava Goel. <a href="https://arxiv.org/abs/1612.00563">Self-critical Sequence Training for Image Captioning</a>. In <i>Computer Vision and Pattern Recognition</i>, pages 1179–1195, 2017.</td>
-  </tr>
+  </tr> -->
 
 </table>
 
@@ -119,12 +122,12 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
     </tr>
         <td>LM rescoring Transformer*</td>
-        <td>67.26</td>
-        <td>49.38</td>
-        <td>33.14</td>
-        <td>22.66</td>
-        <td>25.86</td>
-        <td>40.86</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
     </tr>
     </tr>
         <td>CA Transformer</td>
@@ -146,9 +149,9 @@ Note that models marked with * have not yet been hyperparameter tuned and are ex
 - [x] Optimize Transformer for smaller datasets (8/2/2022)
 - [x] Use custom vocab instead of Bert (recommended for limited datasets, able to limit vocab) (9/2/2022)
 - [ ] MLR Transformer implementation
-- [x] Beam search implementation (20/2/2022)
+- [x] Beam search implementation (20/2/2022) fixed at (1/3/2022)
 - [x] LM rescoring Transformer implementation (28/2/2022)
-- [x] CA Transformer implementation
+- [x] CA Transformer implementation (16/2/2022)
 - [ ] Self-Critical Sequence Training (SCST) 
 
 ## 5. Usage<a name="5"></a> 
@@ -248,6 +251,8 @@ Below are the most common transformer hyper-parameters used for image captioning
 
 ## 7. Hyper-parameter testing <a name="6"></a>
 
+
+### 7.1 Hyper-parameter testing
 | Model                                                 | description                                                                                                                | B1 | B2 | B3 | B4 | MTR | CDR | # epochs |
 |-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|----|----|----|----|----|-----|-----|
 | Default                                               | Base model with default transformer hyper-params. Standard image transforms of resize, normalization.                      |  64.96  |  46.29  | 32.60   |  22.78  |  23.44  |   45.98  |  7 |   
@@ -257,6 +262,15 @@ Below are the most common transformer hyper-parameters used for image captioning
 | Common IC transformer params, but adjusted for smaller datasets | enc_layers = 3, dropout = 0.2, default image transforms, lr=0.0003,  lr_step at epoch 8       |  65.29  |  46.54  |  32.99  |  23.39  |  23.26  |  45.62 | 8 |
 
 From observing the results achieved through implementing regularization techniques only increases the training time (more epochs) without noticeably increasing the accuracies.
+
+
+### Beam search width testing
+| Model                         | B1   | B2   | B3   | B4   | MTR  | CDR  |
+|-------------------------------|------|------|------|------|------|------|
+| Base Transformer beam width 1 | 68.49 | 51.53 | 35.58 | 25.25 | 27.43 | 47.79 |
+| Base Transformer beam width 3 |   65.69   |   48.49   |    32.91  |  22.7  |    26.57  |  42.65  |
+| Base Transformer beam width 5 |  63.71    |   46.23   |  30.90   |   21.08   |   25.97   |    39.87  |
+
 
 ## 8. Self-Critical Sequence Training  <a name="8"></a>
 Deep learning models for sequence generation are traditionally trained using supervised learning methods, in which a cross entropy loss is calculated for each output token and average across the entire generated sequence. Such models are often sequence-to-sequence recurrent models, where the model maintains an internal state *h*<sub>t</sub> during the generation of a sequence and outputs a single token *w*<sub>t</sub> corresponding to an input token at each time step *t*.

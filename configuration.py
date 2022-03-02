@@ -32,8 +32,8 @@ class Config(object):
         self.dropout = 0.2
         self.vocab_size = 30522 
 
-        self.enc_layers = 3
-        self.dec_layers = 6
+        self.enc_layers = 6
+        self.dec_layers = 3
         self.dim_feedforward = 2048
         self.nheads = 8
         self.pre_norm = True
@@ -46,4 +46,6 @@ class Config(object):
 
         #Improvements 
         self.aug_caps = False
-        self.beam_width = 8
+        self.beam_width = 1
+        self.lm_scoring = False 
+        self.lm_influence = 0.8
