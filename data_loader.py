@@ -37,14 +37,14 @@ class Flickr8kTrainDataset(data.Dataset):
         fname = self.train_imgs[index//self.cpi]
         caption = self.f8k.captions[fname][index%self.cpi]
         file_path = self.image_dir + "/" + fname
-        id = fname.split(".")[0]
-
+        this_id = fname.split(".")[0]
+        
 
         image = Image.open(file_path).convert('RGB')
         if self.transform is not None:
             image = self.transform(image)
         image = nested_tensor_from_tensor_list(image.unsqueeze(0))
-
+        
 
         caption_encoded = self.tokenizer.encode_plus(caption, max_length=self.max_length, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
         
@@ -54,7 +54,7 @@ class Flickr8kTrainDataset(data.Dataset):
        
         
 
-        return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask
+        return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask, this_id
 
     def __len__(self):
         return len(self.train_imgs)*self.cpi
@@ -107,13 +107,15 @@ class Flickr8kValidationDataset(data.Dataset):
         
         vocab = self.vocab
         fname = self.val_imgs[index]
-        id = fname.split(".")[0]
+        this_id = fname.split(".")[0]
         caption = self.f8k.captions[fname][index%self.cpi]
 
 
         image = Image.open(os.path.join(self.image_dir, fname)).convert('RGB')
         if self.transform is not None:
             image = self.transform(image)
+
+            
         image = nested_tensor_from_tensor_list(image.unsqueeze(0))
       
         caption_encoded = self.tokenizer.encode_plus(caption, max_length=self.j, pad_to_max_length=True, return_attention_mask=True, return_token_type_ids=False, truncation=True)
@@ -122,7 +124,7 @@ class Flickr8kValidationDataset(data.Dataset):
         cap_mask = (1 - np.array(caption_encoded['attention_mask'])).astype(bool)
 
        
-        return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask
+        return image.tensors.squeeze(0), image.mask.squeeze(0), caption, cap_mask, this_id
             
         
 

@@ -1,10 +1,53 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-
-from .utils import NestedTensor, nested_tensor_from_tensor_list
+from typing import Dict, List
+from .utils import NestedTensor, nested_tensor_from_tensor_list, is_main_process
 from .backbone import build_backbone
 from .transformer import build_transformer
+from torchvision.models._utils import IntermediateLayerGetter
+import torchvision.models as models
+from .position_encoding import build_position_encoding
+from configuration import Config
+import pickle 
+
+
+class FrozenBatchNorm2d(torch.nn.Module):
+    """
+    BatchNorm2d where the batch statistics and the affine parameters are fixed.
+    Copy-paste from torchvision.misc.ops with added eps before rqsrt,
+    without which any other models than torchvision.models.resnet[18,34,50,101]
+    produce nans.
+    """
+
+    def __init__(self, n):
+        super(FrozenBatchNorm2d, self).__init__()
+        self.register_buffer("weight", torch.ones(n))
+        self.register_buffer("bias", torch.zeros(n))
+        self.register_buffer("running_mean", torch.zeros(n))
+        self.register_buffer("running_var", torch.ones(n))
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        num_batches_tracked_key = prefix + 'num_batches_tracked'
+        if num_batches_tracked_key in state_dict:
+            del state_dict[num_batches_tracked_key]
+
+        super(FrozenBatchNorm2d, self)._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
+
+    def forward(self, x):
+        # move reshapes to the beginning
+        # to make it fuser-friendly
+        w = self.weight.reshape(1, -1, 1, 1)
+        b = self.bias.reshape(1, -1, 1, 1)
+        rv = self.running_var.reshape(1, -1, 1, 1)
+        rm = self.running_mean.reshape(1, -1, 1, 1)
+        eps = 1e-5
+        scale = w * (rv + eps).rsqrt()
+        bias = b - rm * scale
+        return x * scale + bias
 
 
 class Caption(nn.Module):
@@ -15,24 +58,64 @@ class Caption(nn.Module):
         self.transformer = transformer
         self.mlp = MLP(hidden_dim, 512, vocab_size, 3)
 
-    def forward(self, samples, target, target_mask):
-        if not isinstance(samples, NestedTensor):
-            samples = nested_tensor_from_tensor_list(samples)
 
-        features, pos = self.backbone(samples)
+        self.image_encoder = models.resnet101(pretrained=True)  ##maybe try 152/101?
+        self.cnn = nn.Sequential(*list(self.image_encoder.children())[:-5])
+        self.config = Config()
+        self.backbone2 = getattr(models, 'resnet101')(
+            replace_stride_with_dilation=[False, False, True],
+            pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
+        self.body = IntermediateLayerGetter(self.backbone2, return_layers={'layer4': "0"})
+        self.position_embedding = build_position_encoding(self.config)
+        self.linear = nn.Linear(1024, 2048) # change this to 1280
 
+    def forward(self, samples, target, target_mask, ids): #target_mask = image_mask
+        # if training 
+        images = samples.tensors
+        # if testing
+        # images = samples.tensors.unsqueeze(0)
+        print("IMG: ",images.shape)
+        # get grid features
+        feat_vecs = self.body(images)['0']
+        print("FV: ", feat_vecs.shape)
+        # get faster rcnn features
+        object_feat_vecs = []
+        for id in ids:
+                with open("faster_rcnn_extracted_features/" + id + '_features.pickle', 'rb') as f:
+                    obj_pickle = pickle.load(f)
+                object_feat_vecs.append(obj_pickle)  
 
-        src, mask = features[-1].decompose()
-        assert mask is not None
-        # print("FEATURES")
-        # print("Source: ", src.shape)
-        # print("mask: ", mask.shape)
-        proj = self.input_proj(src)
-        # print("projection: ")
-        # print(proj.shape)
-
+        object_feat_vecs = torch.stack(object_feat_vecs)
+        object_feat_vecs = torch.squeeze(object_feat_vecs, 2)   
+        object_feat_vecs = self.linear(object_feat_vecs)
+        object_feat_vecs = object_feat_vecs.permute(0, 2, 1)
+        object_feat_vecs = object_feat_vecs.unsqueeze(2)
+        object_feat_vecs = object_feat_vecs.expand(-1,-1,19,-1)
+        print("OBJ: ", object_feat_vecs.shape)
+        # concat grids and faster r-cnn features
+        feat_vecs = torch.cat((feat_vecs, object_feat_vecs), dim=3)
+              
+        # mask = interpolation of grid features None = false, True else
+        m = samples.mask
+        assert m is not None
+        mask = F.interpolate(m[None].float(), size=feat_vecs.shape[-2:]).to(torch.bool)[0]
         
-        hs = self.transformer(proj, mask, pos[-1], target, target_mask)
+    
+        feat_vec_mask_pair = NestedTensor(feat_vecs, mask)
+        pos_embed = self.position_embedding(feat_vec_mask_pair).to(feat_vec_mask_pair.tensors.dtype)
+            
+        # project grid features to lower dim: 2048 -> 256
+        proj = self.input_proj(feat_vecs)
+
+        # RESHAPING OF VISUAL FEATS, MASKS AND POS_EMBEDDINGS
+
+        proj = proj.flatten(2).permute(2, 0, 1) #  flatten NxCxHxW to HWxNxC
+        # print(proj.shape)
+        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
+       
+        mask = mask.flatten(1)
+
+        hs = self.transformer(proj, mask, pos_embed, target, target_mask)
         out = self.mlp(hs.permute(1, 0, 2))
         return out
     
@@ -65,9 +148,7 @@ def build_model(config):
 
 
 def load_transformer_weights(model, weights, config):
-    # TODO only use weights of transformer and not backbone
-    # https://discuss.pytorch.org/t/how-to-load-part-of-pre-trained-model/1113/2
-    
+
     pretrained_dict = weights
     model_dict = model.state_dict()
 

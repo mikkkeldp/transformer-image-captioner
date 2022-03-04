@@ -122,12 +122,12 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
     </tr>
         <td>LM rescoring Transformer*</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
+        <td>68.74</td>
+        <td>51.26</td>
+        <td>35.10</td>
+        <td>24.36</td>
+        <td>27.81</td>
+        <td>47.69</td>
     </tr>
     </tr>
         <td>CA Transformer</td>

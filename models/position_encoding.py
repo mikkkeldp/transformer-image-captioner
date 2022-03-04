@@ -53,6 +53,7 @@ class PositionEmbeddingLearned(nn.Module):
     Absolute pos embedding, learned.
     """
     def __init__(self, num_pos_feats=256):
+        # num_pos_feats = 128 (hidden_dim//2)
         super().__init__()
         self.row_embed = nn.Embedding(50, num_pos_feats)
         self.col_embed = nn.Embedding(50, num_pos_feats)

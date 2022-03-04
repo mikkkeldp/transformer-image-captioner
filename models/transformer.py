@@ -39,16 +39,12 @@ class Transformer(nn.Module):
                 nn.init.xavier_uniform_(p)
 
     def forward(self, src, mask, pos_embed, tgt, tgt_mask):
-        # flatten NxCxHxW to HWxNxC
-        bs, c, h, w = src.shape
-        bs = src.shape[0]
-        src = src.flatten(2).permute(2, 0, 1)
-        # print("SRC FLAT")
-        # print(src.shape)
-        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
-        mask = mask.flatten(1)
-        # print("MASK TRANS")
-        # print(mask.shape)
+       
+        
+        bs = src.shape[1]
+        # print("BS: ", bs)
+        
+  
         tgt = self.embeddings(tgt).permute(1, 0, 2)
         query_embed = self.embeddings.position_embeddings.weight.unsqueeze(1)
         query_embed = query_embed.repeat(1, bs, 1)
@@ -290,8 +286,7 @@ class DecoderEmbeddings(nn.Module):
         seq_length = input_shape[1]
         device = x.device
 
-        position_ids = torch.arange(
-            seq_length, dtype=torch.long, device=device)
+        position_ids = torch.arange(seq_length, dtype=torch.long, device=device)
         position_ids = position_ids.unsqueeze(0).expand(input_shape)
 
         input_embeds = self.word_embeddings(x)
