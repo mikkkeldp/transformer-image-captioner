@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from typing import Dict, List
-from .utils import NestedTensor, nested_tensor_from_tensor_list, is_main_process
+from models.utils import NestedTensor, nested_tensor_from_tensor_list, is_main_process
 from .backbone import build_backbone
 from .transformer import build_transformer
 from torchvision.models._utils import IntermediateLayerGetter
@@ -58,7 +58,6 @@ class Caption(nn.Module):
         self.transformer = transformer
         self.mlp = MLP(hidden_dim, 512, vocab_size, 3)
 
-
         self.image_encoder = models.resnet101(pretrained=True)  ##maybe try 152/101?
         self.cnn = nn.Sequential(*list(self.image_encoder.children())[:-5])
         self.config = Config()
@@ -67,39 +66,49 @@ class Caption(nn.Module):
             pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
         self.body = IntermediateLayerGetter(self.backbone2, return_layers={'layer4': "0"})
         self.position_embedding = build_position_encoding(self.config)
+        
         self.linear = nn.Linear(1024, 2048) # change this to 1280
 
     def forward(self, samples, target, target_mask, ids): #target_mask = image_mask
         # if training 
-        images = samples.tensors
+        # images = samples.tensors
         # if testing
-        # images = samples.tensors.unsqueeze(0)
-        print("IMG: ",images.shape)
+        images = samples.tensors.unsqueeze(0)
+        # print("IMG just before model caption: ",images.shape)
         # get grid features
+        # train
+        # feat_vecs = self.body(images.unsqueeze(0))['0']
         feat_vecs = self.body(images)['0']
-        print("FV: ", feat_vecs.shape)
-        # get faster rcnn features
-        object_feat_vecs = []
-        for id in ids:
-                with open("faster_rcnn_extracted_features/" + id + '_features.pickle', 'rb') as f:
-                    obj_pickle = pickle.load(f)
-                object_feat_vecs.append(obj_pickle)  
+        # print(feat_vecs.shape)
+        # print("FV: ", feat_vecs.shape)
 
-        object_feat_vecs = torch.stack(object_feat_vecs)
-        object_feat_vecs = torch.squeeze(object_feat_vecs, 2)   
-        object_feat_vecs = self.linear(object_feat_vecs)
-        object_feat_vecs = object_feat_vecs.permute(0, 2, 1)
-        object_feat_vecs = object_feat_vecs.unsqueeze(2)
-        object_feat_vecs = object_feat_vecs.expand(-1,-1,19,-1)
-        print("OBJ: ", object_feat_vecs.shape)
+
+        # # get faster rcnn features
+        # object_feat_vecs = []
+        # for id in ids:
+        #         with open("faster_rcnn_extracted_features/" + id + '_features.pickle', 'rb') as f:
+        #             obj_pickle = pickle.load(f)
+        #         object_feat_vecs.append(obj_pickle)  
+
+        # object_feat_vecs = torch.stack(object_feat_vecs)
+        # object_feat_vecs = torch.squeeze(object_feat_vecs, 2)   
+        # object_feat_vecs = self.linear(object_feat_vecs)
+        # object_feat_vecs = object_feat_vecs.permute(0, 2, 1)
+        # object_feat_vecs = object_feat_vecs.unsqueeze(2)
+        # object_feat_vecs = object_feat_vecs.expand(-1,-1,19,-1)
+
+
+        # print("OBJ: ", object_feat_vecs.shape)
         # concat grids and faster r-cnn features
-        feat_vecs = torch.cat((feat_vecs, object_feat_vecs), dim=3)
+        # feat_vecs = torch.cat((feat_vecs, object_feat_vecs), dim=3)
               
         # mask = interpolation of grid features None = false, True else
-        m = samples.mask
+        # train
+        m = samples.mask.unsqueeze(0)
+        
         assert m is not None
         mask = F.interpolate(m[None].float(), size=feat_vecs.shape[-2:]).to(torch.bool)[0]
-        
+    
     
         feat_vec_mask_pair = NestedTensor(feat_vecs, mask)
         pos_embed = self.position_embedding(feat_vec_mask_pair).to(feat_vec_mask_pair.tensors.dtype)

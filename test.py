@@ -18,7 +18,7 @@ import nltk
 import numpy as np
 import math
 from language_model_rescoring import get_score
-from models import utils
+import models.utils as utils
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -317,11 +317,10 @@ for img in tqdm(testing_imgs):
     image = Image.open(img_path)        
     image = transform(image)
 
-    image = utils.nested_tensor_from_tensor_list(image)
+    image = utils.nested_tensor_from_tensor_list(image.unsqueeze(0))
 
     image, image_mask = image.tensors.squeeze(0), image.mask.squeeze(0)
-    print(image.shape)
-    print(image_mask.shape)
+   
     sample = utils.NestedTensor(image, image_mask).to(device)
 
     caption, cap_mask = create_caption_and_mask(start_token, config.max_position_embeddings)

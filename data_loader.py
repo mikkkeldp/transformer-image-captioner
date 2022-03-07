@@ -8,7 +8,7 @@ import nltk
 from PIL import Image
 from build_vocab import Vocabulary, Flickr8k
 from PIL import ImageChops
-from utils import nested_tensor_from_tensor_list, read_json
+from models.utils import nested_tensor_from_tensor_list, read_json
 from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
