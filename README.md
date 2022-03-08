@@ -73,7 +73,7 @@ We will be using our previous work's implementation as our base model, that is c
 </table>
 
 ## 3. Results<a name="3"></a>
-Here the *Base model* is the implementation of our previous work - incorporating all above mentioned improvements to the Soft-Attention model.
+
   <table>
     </tr>
       <td> Model</td>
