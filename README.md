@@ -113,7 +113,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
     </tr>
     </tr>
         <td>MLR Transformer (Faster R-CNN)*</td>
-        <td>69.28</td>
+        <td>**69.28**</td>
         <td>52.06</td>
         <td>36.15</td>
         <td>25.23</td>
@@ -135,23 +135,23 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>51.26</td>
         <td>35.10</td>
         <td>24.36</td>
-        <td>27.81</td>
+        <td>**27.81**</td>
         <td>47.69</td>
     </tr>
     </tr>
         <td>CA Transformer</td>
         <td>68.78</td>
-        <td>52.12</td>
-        <td>36.45</td>
-        <td>25.68</td>
+        <td>**52.12**</td>
+        <td>**36.45**</td>
+        <td>**25.68**</td>
         <td>27.17</td>
-        <td>49.83</td>
+        <td>**49.83**</td>
     </tr>
   </table>
 
 Here the *Base LSTM model* is an LSTM-based model incorporating all 3 proposed metrics. Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. To the contrary of what research suggests for transformers trained on smaller datasets, we have **6** encoder layers and **3** decoder layers (the opposite of what is suggested) and shows promising results. 
 
-While BLEU is the most common metric used within the field of machine translation - having advantages, such as being fast to calculate, it has some problems. Sulem et al (2018) recommend not using BLEU for text simplification. They found that BLEU scores don’t reflect either grammaticality or meaning preservation very well. Novikova et al. (2017) show that BLEU, as well as some other commonly-used metrics, don’t map well to human judgements in evaluating NLG (natural language generation) tasks. Therefor recent work has chosen to optimize on CIDEr-D scores and use BLEU as complimentary metric. 
+While BLEU is the most common metric used within the field of machine translation, it has some drawbacks. Sulem et al (2018) recommend not using BLEU for text simplification. They found that BLEU scores don’t reflect either grammaticality or meaning preservation very well. Novikova et al. (2017) show that BLEU, as well as some other commonly-used metrics, don’t map well to human judgements in evaluating NLG (natural language generation) tasks. Therefor recent work has chosen to optimize on CIDEr-D scores and use BLEU as complimentary metric. 
 
 Interesting to note: the caption augmentation provides the largest improvement out of the 3 proposals. 
 
