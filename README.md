@@ -102,6 +102,10 @@ We will be using our previous work's implementation as our base model, that is c
         <td>23.2</td>
         <td>49.2</td>
     </tr>
+    <tr style="border-bottom:1px solid black">
+    <td colspan="100%"></td>
+  </tr>
+    </tr>
         </tr>
         <td>Base Transformer</td>
         <td>68.49</td>
