@@ -73,7 +73,7 @@ class BackboneBase(nn.Module):
             m = tensor_list.mask
             assert m is not None
             mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
-            # print("MASSKKK", mask[2])
+            
             out[name] = NestedTensor(x, mask)
         return out
 
@@ -123,47 +123,47 @@ class SpatialEncoding(nn.Module):
         return self.linear(x)
 
 
-class MyBackBone(nn.Module):
+# class MyBackBone(nn.Module):
 
-    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
-        super(MyBackBone, self).__init__()
-        self.image_encoder = models.resnet101(pretrained=True)  ##maybe try 152/101?
-        self.cnn = nn.Sequential(*list(self.image_encoder.children())[:-3])
-        self.num_channels = 1024
-        self.pos_embedding_lin = nn.Linear(256, 256)
-        # replace 2nd parameter with config hidden dim
-        self.input_proj = nn.Conv2d(1024, 256, kernel_size=1)
+#     def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+#         super(MyBackBone, self).__init__()
+#         self.image_encoder = models.resnet101(pretrained=True)  ##maybe try 152/101?
+#         self.cnn = nn.Sequential(*list(self.image_encoder.children())[:-3])
+#         self.num_channels = 1024
+#         self.pos_embedding_lin = nn.Linear(256, 256)
+#         # replace 2nd parameter with config hidden dim
+#         self.input_proj = nn.Conv2d(1024, 256, kernel_size=1)
 
-    def forward(self, tensor_list: NestedTensor):
-        feat_vecs = self.cnn(tensor_list.tensors)
+#     def forward(self, tensor_list: NestedTensor):
+#         feat_vecs = self.cnn(tensor_list.tensors)
         
 
-        # replace 1st and 2nd parameter with config 
-        print("FV:", feat_vecs.shape)
-        feat_vecs = self.input_proj(feat_vecs)
-        feat_vecs = feat_vecs.flatten(2)
-        feat_vecs = feat_vecs.permute(2,0,1)
-        print("FV:", feat_vecs.shape)
+#         # replace 1st and 2nd parameter with config 
+#         print("FV:", feat_vecs.shape)
+#         feat_vecs = self.input_proj(feat_vecs)
+#         feat_vecs = feat_vecs.flatten(2)
+#         feat_vecs = feat_vecs.permute(2,0,1)
+#         print("FV:", feat_vecs.shape)
        
-        # feat_vecs = torch.squeeze(feat_vecs, -1)
+#         # feat_vecs = torch.squeeze(feat_vecs, -1)
         
 
-        # add multi-level stuff here
+#         # add multi-level stuff here
 
                 
 
-        # input masks
-        m = tensor_list.mask.flatten(1)
-        mask = F.interpolate(m[None].float(), size=feat_vecs.shape[0]).to(torch.bool)[0]
-        print("MASK: ", mask.shape)
-        # project feature vecs to smaller dimension
+#         # input masks
+#         m = tensor_list.mask.flatten(1)
+#         mask = F.interpolate(m[None].float(), size=feat_vecs.shape[0]).to(torch.bool)[0]
+#         print("MASK: ", mask.shape)
+#         # project feature vecs to smaller dimension
 
 
 
-        pos_emb = self.pos_embedding_lin(feat_vecs)
-        print("POS EMB: ", pos_emb.shape)
+#         pos_emb = self.pos_embedding_lin(feat_vecs)
+#         print("POS EMB: ", pos_emb.shape)
         
-        return feat_vecs, mask, pos_emb
+#         return feat_vecs, mask, pos_emb
 
 # def build_backbone(config):
 #     position_embedding = build_position_encoding(config)

@@ -4,7 +4,12 @@ from typing import List, Optional
 import torch
 import torch.distributed as dist
 from torch import Tensor
+import json
 
+def read_json(file_name):
+    with open(file_name) as handle:
+        out = json.load(handle)
+    return out
 
 def _max_by_axis(the_list):
     # type: (List[List[int]]) -> List[int]
@@ -14,12 +19,14 @@ def _max_by_axis(the_list):
             maxes[index] = max(maxes[index], item)
     return maxes
 
+MAX_DIM = 299
 
 def nested_tensor_from_tensor_list(tensor_list: List[Tensor]):
     # TODO make this more general
+    
     if tensor_list[0].ndim == 3:
         # TODO make it support different-sized images
-        max_size = _max_by_axis([list(img.shape) for img in tensor_list])
+        max_size = [3, MAX_DIM, MAX_DIM]
         # min_size = tuple(min(s) for s in zip(*[img.shape for img in tensor_list]))
         batch_shape = [len(tensor_list)] + max_size
         b, c, h, w = batch_shape

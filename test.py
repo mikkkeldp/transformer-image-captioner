@@ -18,9 +18,12 @@ import nltk
 import numpy as np
 import math
 from language_model_rescoring import get_score
+import models.utils as utils
+
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(f'Initializing Device: {device}')
+
 
 parser = argparse.ArgumentParser(description='Image Captioning')
 
@@ -93,11 +96,10 @@ def get_eval_score(references, hypotheses):
 
     return score_dict
 
-def greedy_search(image, caption, cap_mask):
+def greedy_search(image, caption, cap_mask, id):
     
-
     for i in range(config.max_position_embeddings - 1): #iterate rows of vocab_size x max_pos_embedding matrix
-        predictions = model(image, caption, cap_mask)
+        predictions = model(image, caption, cap_mask, id, True)
         
         predictions = predictions[:, i, :]
         
@@ -136,26 +138,33 @@ Rescore beam search candidates with the aid of a language model
 
 '''
 def rescore_sequences(sequences, influence):
+    global avg_lm_score
+    global avg_loss_score
     for i in range(len(sequences)):
         caption = sequences[i][0].cpu().detach().numpy()[0]
-        index = np.where(caption == 0)[0][0]
+        try:
+            index = np.where(caption == 0)[0][0]
+            caption = caption[:index]
+        except IndexError:
+            pass
 
-        caption = caption[:index]
         caption = tokenizer.decode(caption,skip_special_tokens=True)
         lm_score = get_score(caption)
-
-        sequences[i][1] -= influence*lm_score
-
+        avg_lm_score += lm_score
+        avg_loss_score += sequences[i][1].cpu().detach().numpy()
+        # print(lm_score)
+        sequences[i][1] += influence*lm_score
+    sequences = sorted(sequences, key=lambda tup:tup[1], reverse=True) 
     return sequences
 
 
 """
 Beam search implementation, k number of beams
 """
-def beam_search(image, caption, cap_mask, k):
+def beam_search(image, caption, cap_mask, k, ids):
 
     sequences = []
-    predictions = model(image, caption, cap_mask)
+    predictions = model(image, caption, cap_mask, ids, True)
     predictions = predictions[:, 0, :]
     scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
     scores = scores[0]
@@ -170,8 +179,16 @@ def beam_search(image, caption, cap_mask, k):
         candidate = [candidate_seq, scores[j], candidate_cap_mask, completed]
         sequences.append(candidate)
   
-    
+    decay = 0
+
     for i in range(1, config.max_position_embeddings -1):
+        if i > 7:
+            decay = 3
+        elif i > 10:
+            decay = 5 
+        elif i > 12:
+            decay = 8
+
         new_seqs = []
         for j in range(k): #for every beam in sequence list
             new_caption = sequences[j][0].clone()
@@ -184,7 +201,7 @@ def beam_search(image, caption, cap_mask, k):
                 new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
                 new_seqs.append(new_candidate)
             else:
-                new_predictions = model(image, new_caption, new_cap_mask)
+                new_predictions = model(image, new_caption, new_cap_mask, ids, True)
                 new_predictions = new_predictions[:, i, :] 
                 new_scores, new_predicted_ids = torch.topk(new_predictions, k=k+1,  dim=-1)
 
@@ -200,7 +217,11 @@ def beam_search(image, caption, cap_mask, k):
                 for l in range(k): #expand each beam 
                     new_caption[:, i+1] = new_predicted_ids[l]
                     new_cap_mask[:, i+1] = False
+
                     new_score += new_scores[l]
+                    new_score -= decay
+
+
                     if new_predicted_ids[l] == 1012 or new_predicted_ids[l] == 102:
                         new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
                         new_seqs.append(new_candidate)
@@ -215,21 +236,24 @@ def beam_search(image, caption, cap_mask, k):
         new_seqs = new_seqs[:k]
         sequences = new_seqs
      
-
+        # show_beam(sequences)
         all_completed = True
         for seq in sequences:
             if seq[3] == False: all_completed = False
-
+        
         if all_completed:
+            # show_beam(sequences)
             if config.lm_scoring:
                 sequences = rescore_sequences(sequences, config.lm_influence)
+            # show_beam(sequences)
             return sequences[0][0]
 
 
     print("MAX")
-  
+
     if config.lm_scoring:
         sequences = rescore_sequences(sequences, config.lm_influence)
+    
     return sequences[0][0]
 
 
@@ -237,13 +261,19 @@ def beam_search(image, caption, cap_mask, k):
 
 
 @torch.no_grad()
-def evaluate(image, caption, cap_mask):
+def evaluate(image, caption, cap_mask, id):
     model.eval()
     if config.beam_width == 1:
-        return greedy_search(image, caption, cap_mask)
+        return greedy_search(image, caption, cap_mask, id)
     else:
-        return beam_search(image, caption, cap_mask, config.beam_width)
-    # return n_beam_search(image, caption, cap_mask, config.beam_width)
+        return beam_search(image, caption, cap_mask, config.beam_width, id)
+    
+
+
+#test stuff
+avg_lm_score = 0
+avg_loss_score = 0
+
 
 dataset_path = "./dataset/Flickr8k_Dataset"
 dataset_test_paths = "./dataset/Flickr_8k.testImages.txt"
@@ -280,21 +310,26 @@ for caption in target_captions:
 targets = []
 predicted = []
 for img in tqdm(testing_imgs):
-
+    id = [img.split(".")[0]]
+   
     img_path = dataset_path + "/" + img
     image = Image.open(img_path)        
     image = transform(image)
-    image = image.unsqueeze(0)
+
+    image = utils.nested_tensor_from_tensor_list(image.unsqueeze(0))
+
+    image, image_mask = image.tensors.squeeze(0), image.mask.squeeze(0)
+   
+    sample = utils.NestedTensor(image, image_mask).to(device)
 
     caption, cap_mask = create_caption_and_mask(start_token, config.max_position_embeddings)
     caption = caption.to(device)
     cap_mask = cap_mask.to(device)
     image = image.to(device)
 
-    output = evaluate(image, caption, cap_mask)
+    output = evaluate(sample, caption, cap_mask, id)
     output = output[0].tolist()
    
-
     try:
         index = output.index(0)
     except ValueError as e:
@@ -308,5 +343,6 @@ for img in tqdm(testing_imgs):
     predicted.append(output)
     targets.append(target)
 
-
+print(avg_loss_score/1000*config.batch_size)
+print(avg_lm_score/1000*config.batch_size)
 scores = get_eval_score(targets, predicted)
