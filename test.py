@@ -98,9 +98,8 @@ def get_eval_score(references, hypotheses):
 
 def greedy_search(image, caption, cap_mask, id):
     
-
     for i in range(config.max_position_embeddings - 1): #iterate rows of vocab_size x max_pos_embedding matrix
-        predictions = model(image, caption, cap_mask, id)
+        predictions = model(image, caption, cap_mask, id, True)
         
         predictions = predictions[:, i, :]
         
@@ -162,10 +161,10 @@ def rescore_sequences(sequences, influence):
 """
 Beam search implementation, k number of beams
 """
-def beam_search(image, caption, cap_mask, k):
+def beam_search(image, caption, cap_mask, k, ids):
 
     sequences = []
-    predictions = model(image, caption, cap_mask)
+    predictions = model(image, caption, cap_mask, ids, True)
     predictions = predictions[:, 0, :]
     scores, predicted_ids = torch.topk(predictions, k=k,  dim=-1)
     scores = scores[0]
@@ -202,7 +201,7 @@ def beam_search(image, caption, cap_mask, k):
                 new_candidate = [new_caption.clone(), new_score.clone(), new_cap_mask.clone(), True]
                 new_seqs.append(new_candidate)
             else:
-                new_predictions = model(image, new_caption, new_cap_mask)
+                new_predictions = model(image, new_caption, new_cap_mask, ids, True)
                 new_predictions = new_predictions[:, i, :] 
                 new_scores, new_predicted_ids = torch.topk(new_predictions, k=k+1,  dim=-1)
 
@@ -251,7 +250,7 @@ def beam_search(image, caption, cap_mask, k):
 
 
     print("MAX")
-    print(sequences)
+
     if config.lm_scoring:
         sequences = rescore_sequences(sequences, config.lm_influence)
     
@@ -268,7 +267,7 @@ def evaluate(image, caption, cap_mask, id):
         return greedy_search(image, caption, cap_mask, id)
     else:
         return beam_search(image, caption, cap_mask, config.beam_width, id)
-    # return n_beam_search(image, caption, cap_mask, config.beam_width)
+    
 
 
 #test stuff

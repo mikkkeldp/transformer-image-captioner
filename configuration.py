@@ -3,11 +3,11 @@ class Config(object):
 
         # Learning rates
         self.lr_backbone = 1e-5
-        self.lr = 0.0003
+        self.lr = 0.00005
 
         # Epochs
         self.epochs = 20
-        self.lr_drop = 8
+        self.lr_drop = 1
         self.start_epoch = 0
         self.weight_decay = 1e-4
 
@@ -19,9 +19,9 @@ class Config(object):
         # Basic
         self.device = 'cuda:0'
         self.seed = 42
-        self.batch_size = 10
+        self.batch_size = 11
         self.num_workers = 8
-        self.checkpoint = './checkpoint_11.pth'
+        self.checkpoint = './checkpoint_8.pth'
         self.clip_max_norm = 0.1
 
         # Transformer
@@ -46,6 +46,6 @@ class Config(object):
 
         #Improvements 
         self.aug_caps = False
-        self.beam_width = 1
+        self.beam_width = 4
         self.lm_scoring = False 
         self.lm_influence = 0.05 #[0.1-3]

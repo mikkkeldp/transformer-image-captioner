@@ -66,65 +66,71 @@ class Caption(nn.Module):
             pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
         self.body = IntermediateLayerGetter(self.backbone2, return_layers={'layer4': "0"})
         self.position_embedding = build_position_encoding(self.config)
-        
-        self.linear = nn.Linear(1024, 2048) # change this to 1280
-
-    def forward(self, samples, target, target_mask, ids): #target_mask = image_mask
-        # if training 
-        # images = samples.tensors
-        # if testing
-        images = samples.tensors.unsqueeze(0)
-        # print("IMG just before model caption: ",images.shape)
-        # get grid features
-        # train
-        # feat_vecs = self.body(images.unsqueeze(0))['0']
-        feat_vecs = self.body(images)['0']
-        # print(feat_vecs.shape)
-        # print("FV: ", feat_vecs.shape)
-
-
-        # # get faster rcnn features
-        # object_feat_vecs = []
-        # for id in ids:
-        #         with open("faster_rcnn_extracted_features/" + id + '_features.pickle', 'rb') as f:
-        #             obj_pickle = pickle.load(f)
-        #         object_feat_vecs.append(obj_pickle)  
-
-        # object_feat_vecs = torch.stack(object_feat_vecs)
-        # object_feat_vecs = torch.squeeze(object_feat_vecs, 2)   
-        # object_feat_vecs = self.linear(object_feat_vecs)
-        # object_feat_vecs = object_feat_vecs.permute(0, 2, 1)
-        # object_feat_vecs = object_feat_vecs.unsqueeze(2)
-        # object_feat_vecs = object_feat_vecs.expand(-1,-1,19,-1)
-
-
-        # print("OBJ: ", object_feat_vecs.shape)
-        # concat grids and faster r-cnn features
-        # feat_vecs = torch.cat((feat_vecs, object_feat_vecs), dim=3)
-              
-        # mask = interpolation of grid features None = false, True else
-        # train
-        m = samples.mask.unsqueeze(0)
-        
-        assert m is not None
-        mask = F.interpolate(m[None].float(), size=feat_vecs.shape[-2:]).to(torch.bool)[0]
-    
-    
-        feat_vec_mask_pair = NestedTensor(feat_vecs, mask)
-        pos_embed = self.position_embedding(feat_vec_mask_pair).to(feat_vec_mask_pair.tensors.dtype)
-            
-        # project grid features to lower dim: 2048 -> 256
-        proj = self.input_proj(feat_vecs)
-
-        # RESHAPING OF VISUAL FEATS, MASKS AND POS_EMBEDDINGS
-
-        proj = proj.flatten(2).permute(2, 0, 1) #  flatten NxCxHxW to HWxNxC
-        # print(proj.shape)
-        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
+        self.multi_pos_embeding = nn.Parameter(torch.zeros(self.config.batch_size, 361+10, hidden_dim))
+        self.linear = nn.Linear(1024, hidden_dim) # change this to 1280
+        self.linear_proj = nn.Linear(2048, hidden_dim)
        
+
+    def forward(self, samples, target, target_mask, ids, testing): #target_mask = image_mask
+        # if training 
+        images = samples.tensors
+        m = samples.mask
+
+        # if testing
+        if testing:
+            images = samples.tensors.unsqueeze(0)
+            batch_size = 1
+            m = samples.mask.unsqueeze(0)
+        else:
+            batch_size = samples.tensors.shape[0]
+
+        assert m is not None
+        
+       
+        # get grid features
+        feat_vecs = self.body(images)['0']
+        feat_vecs = self.input_proj(feat_vecs)
+        
+        mask = F.interpolate(m[None].float(), size=feat_vecs.shape[-2:]).to(torch.bool)[0]
+
+        feat_vecs = feat_vecs.flatten(2)
         mask = mask.flatten(1)
 
-        hs = self.transformer(proj, mask, pos_embed, target, target_mask)
+        # get faster rcnn features
+        object_feat_vecs = []
+        for id in ids:
+                with open("faster_rcnn_extracted_features/" + id + '_features.pickle', 'rb') as f:
+                    obj_pickle = pickle.load(f)
+                object_feat_vecs.append(obj_pickle)  
+
+        object_feat_vecs = torch.stack(object_feat_vecs)
+        object_feat_vecs = torch.squeeze(object_feat_vecs, 2)   
+        object_feat_vecs = self.linear(object_feat_vecs)
+        object_feat_vecs = object_feat_vecs.permute(0,2,1)
+
+        obj_mask = torch.zeros((batch_size,10),dtype=torch.bool).to('cuda')
+      
+       
+        feat_vecs = torch.cat((feat_vecs, object_feat_vecs), dim=2)
+        feat_vecs = feat_vecs.permute(0,2,1)
+ 
+        mask = torch.cat((mask, obj_mask), dim=1)
+  
+        pos_emb = self.multi_pos_embeding
+        
+       
+
+        proj = feat_vecs.permute(1,0,2)
+
+        # if testing
+        if testing:
+            pos_emb = pos_emb[0]
+            pos_emb = pos_emb.unsqueeze(0)
+       
+        pos_emb = pos_emb.permute(1,0,2)
+   
+ 
+        hs = self.transformer(proj, mask, pos_emb, target, target_mask)
         out = self.mlp(hs.permute(1, 0, 2))
         return out
     
