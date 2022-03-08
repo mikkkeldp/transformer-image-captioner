@@ -151,6 +151,9 @@ We will be using our previous work's implementation as our base model, that is c
         <td>27.17</td>
         <td><b>49.83<b></td>
     </tr>
+  <tr style="border-bottom:1px solid black">
+    <td colspan="100%"></td>
+  </tr>
   </tr>
        </tr>
         <td>Final Transformer</td>
