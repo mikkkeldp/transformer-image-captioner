@@ -113,7 +113,7 @@ We will be using our previous work's implementation as our base model, that is c
     </tr>
     </tr>
         <td>MLR Transformer (Faster R-CNN)*</td>
-        <td>**69.28**</td>
+        <td><b>69.28</b></td>
         <td>52.06</td>
         <td>36.15</td>
         <td>25.23</td>
@@ -135,17 +135,17 @@ We will be using our previous work's implementation as our base model, that is c
         <td>51.26</td>
         <td>35.10</td>
         <td>24.36</td>
-        <td>**27.81**</td>
+        <td><b>27.81</b></td>
         <td>47.69</td>
     </tr>
     </tr>
         <td>CA Transformer</td>
         <td>68.78</td>
-        <td>**52.12**</td>
-        <td>**36.45**</td>
-        <td>**25.68**</td>
+        <td><b>52.12</b></td>
+        <td><b>36.45</b></td>
+        <td><b>25.68</b></td>
         <td>27.17</td>
-        <td>**49.83**</td>
+        <td><b>49.83<b></td>
     </tr>
   </table>
 
