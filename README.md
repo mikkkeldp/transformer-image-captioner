@@ -165,7 +165,7 @@ Interesting to note: the caption augmentation provides the largest improvement o
 - [x] Base Transformer (2/2/2022)
 - [x] Optimize Transformer for smaller datasets (8/2/2022)
 - [x] Use custom vocab instead of Bert (recommended for limited datasets, able to limit vocab) (9/2/2022)
-- [x] MLR Transformer implementation
+- [x] MLR Transformer implementation (7/3/2022)
 - [x] Beam search implementation (20/2/2022) fixed at (1/3/2022)
 - [x] LM rescoring Transformer implementation (28/2/2022)
 - [x] CA Transformer implementation (16/2/2022)
