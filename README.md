@@ -147,6 +147,16 @@ We will be using our previous work's implementation as our base model, that is c
         <td>27.17</td>
         <td><b>49.83<b></td>
     </tr>
+  </tr>
+       </tr>
+        <td>Final Transformer</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
   </table>
 
 *Base LSTM model* is an LSTM-based model incorporating all 3 proposed metrics. Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. To the contrary of what research suggests for transformers trained on smaller datasets, we have **6** encoder layers and **3** decoder layers (the opposite of what is suggested) and shows promising results. 
