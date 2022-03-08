@@ -166,11 +166,11 @@ We will be using our previous work's implementation as our base model, that is c
     </tr>
   </table>
 
-*Base LSTM model* is an LSTM-based model incorporating all 3 proposed metrics. Note that models marked with * have not yet been hyperparameter tuned and are expected to improve. To the contrary of what research suggests for transformers trained on smaller datasets, we have **6** encoder layers and **3** decoder layers (the opposite of what is suggested) and shows promising results. 
+*Base LSTM model* is an LSTM-based model (Soft-Attention) incorporating all 3 proposals. Models marked with * have not yet been hyperparameter tuned and are expected to improve. To the contrary of what research suggests for transformers trained on smaller datasets, we have **6** encoder layers and **3** decoder layers (opposite of what is suggested) and shows promising results. 
 
 While BLEU is the most common metric used within the field of machine translation, it has some drawbacks. Sulem et al (2018) recommend not using BLEU for text simplification. They found that BLEU scores don’t reflect either grammaticality or meaning preservation very well. Novikova et al. (2017) show that BLEU, as well as some other commonly-used metrics, don’t map well to human judgements in evaluating NLG (natural language generation) tasks. Therefor recent work has chosen to optimize on CIDEr-D scores and use BLEU as complimentary metric. 
 
-Interesting to note: the caption augmentation provides the largest improvement out of the 3 proposals. 
+Interesting to note: caption augmentation provides the largest improvement out of the 3 proposals. This might be an indication of transformers thriving in more data environments, but still manages to best the LSTM baseline under this low-resource regime.
 
 
 
