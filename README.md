@@ -58,16 +58,16 @@ We will be using our previous work's implementation as our base model, that is c
     <td>The encoder is fed image region embeddings consisting of high-level attention regions achieved through the feature maps of a pre-trained CNN in ResNet.</td>
   </tr>
    </tr>
-    <td> Multi-level regions Transformer</td>
+    <td> MLR - Multi-level regions Transformer</td>
     <td>In addition to the high-level attention regions provided in the base transformer, we provide more fine-grained attention regions produced by either PanopticFCN or Faster R-CNN.</td>
   </tr>
   </tr>
    </tr>
-    <td> LM rescoring Transformer</td>
+    <td> LM - Language Modelling rescoring Transformer</td>
     <td>During beam-search, we will use GPT-2 to rescore the caption candidates.</td>
   </tr>
   </tr>
-    <td>Caption augmentation Transformer</td>
+    <td> CA - caption augmentation Transformer</td>
     <td>We make use of the T5 text-to-text model to augment training captions.</td>
   </tr>
 </table>
