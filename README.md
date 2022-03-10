@@ -57,7 +57,7 @@ We will be using our previous work's implementation as our base model, that is c
     <td>The encoder is fed image region embeddings consisting of high-level attention regions achieved through the feature maps of a pre-trained CNN in ResNet.</td>
   </tr>
    </tr>
-    <td> ML - Multi-level regions Transformer</td>
+    <td> MLR - Multi-level regions Transformer</td>
     <td>In addition to the high-level attention regions provided in the base transformer, we provide more fine-grained attention regions produced by either PanopticFCN or Faster R-CNN.</td>
   </tr>
   </tr>
