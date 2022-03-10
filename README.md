@@ -47,7 +47,29 @@ On top of this, we will be incorporating the improvements introduced to [Xu et a
 
 ## 2. Model comparison<a name="2"></a>
 We will be using our previous work's implementation as our base model, that is comprised of the Soft-Attention model along with all 3 improvements listed above. To measure the effectiveness of these improvements on a transformer-based model, we will be implementing the following model variations:
-
+<table>
+  </tr>
+    <td><b>Model</b></td>
+    <td><b>Description</b></td>
+  </tr>
+  </tr>
+    <td>Base Transformer</td>
+    <td>The encoder is fed image region embeddings consisting of high-level attention regions achieved through the feature maps of a pre-trained CNN in ResNet.</td>
+  </tr>
+   </tr>
+    <td> ML - Multi-level regions Transformer</td>
+    <td>In addition to the high-level attention regions provided in the base transformer, we provide more fine-grained attention regions produced by either PanopticFCN or Faster R-CNN.</td>
+  </tr>
+  </tr>
+   </tr>
+    <td> LM - Language Modelling rescoring Transformer</td>
+    <td>During beam-search, we will use GPT-2 to rescore the caption candidates.</td>
+  </tr>
+  </tr>
+    <td>CA - Caption augmentation Transformer</td>
+    <td>We make use of the T5 text-to-text model to augment training captions.</td>
+  </tr>
+</table>
  <table>
     </tr>
       <td> Model</td>
