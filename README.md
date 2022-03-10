@@ -94,7 +94,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>18.9</td>
         <td>-</td>
     </tr>
-    </tr >
+    </tr>
         <td>Hard-Attention</td>
         <td></td>
         <td></td>
@@ -103,7 +103,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td></td>
         <td>-</td>
     </tr>
-    </tr >
+    </tr>
         <td>GLA</td>
         <td>-</td>
         <td>-</td>
@@ -112,7 +112,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>16.9</td>
         <td><41.9/td>
     </tr>
-     </tr >
+     </tr>
         <td>F-G Attention</td>
         <td>69.4</td>
         <td>48.2</td>
@@ -121,7 +121,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>22.62</td>
         <td>-</td>
     </tr>
-     </tr >
+    </tr>
         <td>gLSTM</td>
         <td>64.7</td>
         <td>45.9</td>
@@ -141,9 +141,9 @@ We will be using our previous work's implementation as our base model, that is c
     </tr>
     <tr style="border-bottom:1px solid black">
     <td colspan="100%"></td>
-  </tr>
     </tr>
-        </tr>
+    </tr>
+    </tr>
         <td>Base Transformer</td>
         <td>68.49</td>
         <td>51.15</td>
@@ -161,7 +161,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>27.14</td>
         <td><b>49.88</b></td>
     </tr>
-       </tr>
+    </tr>
         <td>MLR Transformer (PanopticFCN)</td>
         <td>-</td>
         <td>-</td>
