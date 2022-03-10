@@ -101,7 +101,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>23.9</td>
         <td>14.8</td>
         <td>16.9</td>
-        <td><41.9/td>
+        <td>41.9</td>
     </tr>
     </tr>
         <td>SDA-CFGHG</td>
