@@ -112,6 +112,10 @@ We will be using our previous work's implementation as our base model, that is c
         <td>20.5</td>
         <td>45.9</td>
     </tr>
+    <tr style="border-bottom:1px solid black">
+    <td colspan="100%"></td>
+  </tr>
+  </tr>
     </tr>
         <td>Base LSTM model</td>
         <td>68.6</td>
@@ -174,7 +178,7 @@ We will be using our previous work's implementation as our base model, that is c
     <td colspan="100%"></td>
   </tr>
   </tr>
-       </tr>
+  </tr>
         <td>Final Transformer</td>
         <td>-</td>
         <td>-</td>
