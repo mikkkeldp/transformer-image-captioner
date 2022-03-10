@@ -75,6 +75,7 @@ We will be using our previous work's implementation as our base model, that is c
 ## 3. Results<a name="3"></a>
 
   <table>
+    
     </tr>
       <td> Model</td>
       <td>B-1</td>
@@ -91,6 +92,42 @@ We will be using our previous work's implementation as our base model, that is c
         <td>29.9</td>
         <td>19.5</td>
         <td>18.9</td>
+        <td>-</td>
+    </tr>
+    </tr >
+        <td>Hard-Attention</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>-</td>
+    </tr>
+    </tr >
+        <td>GLA</td>
+        <td>-</td>
+        <td>-</td>
+        <td>23.9</td>
+        <td>14.8</td>
+        <td>16.9</td>
+        <td><41.9/td>
+    </tr>
+     </tr >
+        <td>F-G Attention</td>
+        <td>69.4</td>
+        <td>48.2</td>
+        <td>33.7</td>
+        <td>23.8</td>
+        <td>22.62</td>
+        <td>-</td>
+    </tr>
+     </tr >
+        <td>gLSTM</td>
+        <td>64.7</td>
+        <td>45.9</td>
+        <td>31.8</td>
+        <td>21.6</td>
+        <td>20.19</td>
         <td>-</td>
     </tr>
     </tr>
