@@ -166,7 +166,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td><b>52.84</b></td>
         <td><b>36.80</b></td>
         <td><b>25.80</b></td>
-        <td>27.14</td>
+        <td><b>27.14</b></td>
         <td><b>49.88</b></td>
     </tr>
        </tr>
@@ -179,13 +179,13 @@ We will be using our previous work's implementation as our base model, that is c
         <td>47.19</td>
     </tr>
     </tr>
-        <td>LM rescoring Transformer*</td>
-        <td>68.74</td>
-        <td>51.26</td>
-        <td>35.10</td>
-        <td>24.36</td>
-        <td><b>27.81</b></td>
-        <td>47.69</td>
+        <td>LM rescoring Transformer</td>
+        <td>69.02</td>
+        <td>51.74</td>
+        <td>36.07</td>
+        <td>25.57</td>
+        <td>26.81</td>
+        <td>49.10</td>
     </tr>
     </tr>
         <td>CA Transformer</td>
