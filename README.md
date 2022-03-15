@@ -171,12 +171,12 @@ We will be using our previous work's implementation as our base model, that is c
     </tr>
        </tr>
         <td>MLR Transformer (PanopticFCN)</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
+        <td>69.31</td>
+        <td>52.08</td>
+        <td>36.01</td>
+        <td>25.04</td>
+        <td>26.79</td>
+        <td>47.19</td>
     </tr>
     </tr>
         <td>LM rescoring Transformer*</td>
