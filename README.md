@@ -161,7 +161,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td>47.79</td>
     </tr>
     </tr>
-        <td>MLR Transformer (Faster R-CNN)*</td>
+        <td>MLR Transformer (Faster R-CNN)</td>
         <td><b>69.95</b></td>
         <td><b>52.84</b></td>
         <td><b>36.80</b></td>
@@ -170,7 +170,7 @@ We will be using our previous work's implementation as our base model, that is c
         <td><b>49.88</b></td>
     </tr>
        </tr>
-        <td>MLR Transformer (PanopticFCN)</td>
+        <td>MLR Transformer (PanopticFCN)*</td>
         <td>69.31</td>
         <td>52.08</td>
         <td>36.01</td>
