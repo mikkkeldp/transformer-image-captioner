@@ -6,14 +6,14 @@ import sys
 import tqdm
 
 from models import utils
-from  torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler, autocast
 
 
 scaler = GradScaler()
 
 
 def train_one_epoch(model, criterion, data_loader,
-                    optimizer, device, epoch, max_norm):
+                    optimizer, device, epoch, max_norm, config):
     model.train()
     criterion.train()
 
@@ -28,7 +28,11 @@ def train_one_epoch(model, criterion, data_loader,
             optimizer.zero_grad(set_to_none=True)
             
             with autocast():
+<<<<<<< HEAD
                 outputs = model(samples, caps[:, :-1], cap_masks[:, :-1], ids, False)
+=======
+                outputs = model(samples, caps[:, :-1], cap_masks[:, :-1], ids, False, config.ml, config.ml_type)
+>>>>>>> multi-level
                 loss = criterion(outputs.permute(0, 2, 1), caps[:, 1:])
             scaler.scale(loss).backward()
 
@@ -54,7 +58,7 @@ def train_one_epoch(model, criterion, data_loader,
     return epoch_loss / total
 
 @torch.no_grad()
-def evaluate(model, criterion, data_loader, device):
+def evaluate(model, criterion, data_loader, device, config):
     model.eval()
     criterion.eval()
 
@@ -67,7 +71,7 @@ def evaluate(model, criterion, data_loader, device):
             caps = caps.to(device)
             cap_masks = cap_masks.to(device)
 
-            outputs = model(samples, caps[:, :-1], cap_masks[:, :-1], ids)
+            outputs = model(samples, caps[:, :-1], cap_masks[:, :-1], ids, False, config.ml, config.ml_type)
             loss = criterion(outputs.permute(0, 2, 1), caps[:, 1:])
 
             validation_loss += loss.item()

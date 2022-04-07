@@ -6,22 +6,7 @@ import itertools
 import configparser 
 from transformers import BertTokenizer
 
-class Flickr8k(object):
-    def __init__(self, caption_path):
 
-        with open(caption_path) as f:
-            all_captions = f.read().splitlines()
-
-        captions = {}
-        for _, idcap in enumerate(all_captions):
-            x = idcap.split('#')
-            name, cap = x[0], "#".join(x[1:])[2:]
-            if name not in captions:
-                captions[name] = []
-            captions[name].append(cap)
-
-        self.captions = captions
-        self.counter = None
 
 class Vocabulary(object):
     """Simple vocabulary wrapper."""

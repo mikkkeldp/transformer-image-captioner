@@ -30,16 +30,16 @@ tokenizer, model = load_model()
 
 def get_score(sentence):
     tokenize_input = tokenizer.tokenize(sentence)
-    input_ids = torch.tensor(tokenizer.encode(tokenize_input)).unsqeeze(0).to(device)
+    input_ids = torch.tensor(tokenizer.encode(tokenize_input)).unsqueeze(0).to(device)
     with torch.no_grad():
         loss = model(input_ids, labels = input_ids)[0]
         return math.exp(loss.item())
 
-from lm_scorer.models.auto import AutoLMScorer as LMScorer
+# from lm_scorer.models.auto import AutoLMScorer as LMScorer
 
-scorer = LMScorer.from_pretrained("gpt2", device="cuda", batch_size=1)
+# scorer = LMScorer.from_pretrained("gpt2", device="cuda", batch_size=1)
 
 
-def get_score(sentence):
-    score = scorer.sentence_score(sentence, log=True)
-    return score
+# def get_score(sentence):
+#     score = scorer.sentence_score(sentence, log=True)
+#     return score

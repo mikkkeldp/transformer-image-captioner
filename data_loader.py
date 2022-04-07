@@ -5,23 +5,41 @@ import os
 import pickle
 import numpy as np
 import nltk
-from PIL import Image
-from build_vocab import Vocabulary, Flickr8k
-from PIL import ImageChops
+from PIL import Image, ImageChops
 from models.utils import nested_tensor_from_tensor_list, read_json
 from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
+
+class Flickr8k(object):
+    def __init__(self, caption_path):
+
+        with open(caption_path) as f:
+            all_captions = f.read().splitlines()
+
+        captions = {}
+        for _, idcap in enumerate(all_captions):
+            x = idcap.split('#')
+            name, cap = x[0], "#".join(x[1:])[2:]
+            if name not in captions:
+                captions[name] = []
+            captions[name].append(cap)
+
+        self.captions = captions
+        self.counter = None
+
+
+
 class Flickr8kTrainDataset(data.Dataset):
 
-    def __init__(self, image_dir, caption_path, split_path, vocab, transform=None, cpi=5, max_length=33):
+    def __init__(self, image_dir, caption_path, split_path, transform=None, cpi=5, max_length=33):
         self.image_dir = image_dir
         self.f8k = Flickr8k(caption_path=caption_path)
 
         with open(split_path, 'r') as f:
             self.train_imgs = f.read().splitlines()
 
-        self.vocab = vocab
+  
         self.transform = transform
         #change this to 10 for augmented captions
         self.cpi = cpi # captions per image
@@ -33,7 +51,7 @@ class Flickr8kTrainDataset(data.Dataset):
     def __getitem__(self, index):
    
         """Returns one data pair (image and caption)."""
-        vocab = self.vocab
+     
         fname = self.train_imgs[index//self.cpi]
         caption = self.f8k.captions[fname][index%self.cpi]
         file_path = self.image_dir + "/" + fname
@@ -62,13 +80,12 @@ class Flickr8kTrainDataset(data.Dataset):
 
 
 
-def get_train_loader(image_dir, caption_path, train_path, vocab, transform, batch_size, shuffle, num_workers, cpi, max_length):
+def get_train_loader(image_dir, caption_path, train_path, transform, batch_size, shuffle, num_workers, cpi, max_length):
     """Returns torch.utils.data.DataLoader for custom flickr8k dataset."""
   
     f8k = Flickr8kTrainDataset(image_dir=image_dir,
                        caption_path=caption_path,
                        split_path=train_path,
-                       vocab=vocab,
                        transform=transform,
                        cpi=cpi,
                        max_length=max_length)
@@ -93,19 +110,19 @@ def get_train_loader(image_dir, caption_path, train_path, vocab, transform, batc
 
 class Flickr8kValidationDataset(data.Dataset):
 
-    def __init__(self, image_dir, caption_path, split_path, vocab, transform=None):
+    def __init__(self, image_dir, caption_path, split_path, transform=None):
         self.image_dir = image_dir
         self.f8k = Flickr8k(caption_path=caption_path)
 
         with open(split_path, 'r') as f:
             self.val_imgs = f.read().splitlines()
 
-        self.vocab = vocab
+
         self.transform = transform
 
     def __getitem__(self, index):
         
-        vocab = self.vocab
+ 
         fname = self.val_imgs[index]
         this_id = fname.split(".")[0]
         caption = self.f8k.captions[fname][index%self.cpi]
@@ -133,11 +150,10 @@ class Flickr8kValidationDataset(data.Dataset):
 
 
 
-def get_validation_loader(image_dir, caption_path, val_path, vocab, transform, batch_size, num_workers, max_length):
+def get_validation_loader(image_dir, caption_path, val_path, transform, batch_size, num_workers, max_length):
     f8k = Flickr8kValidationDataset(image_dir=image_dir,
                    caption_path=caption_path,
                    split_path=val_path,
-                   vocab=vocab,
                    transform=transform)
     
     sampler_val = torch.utils.data.SequentialSampler(f8k)

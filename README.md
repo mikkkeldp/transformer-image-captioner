@@ -102,7 +102,7 @@ Here the *Base model* is the implementation of our previous work - incorporating
         <td>23.2</td>
         <td>49.2</td>
     </tr>
-        </tr>
+    </tr>
         <td>Base Transformer</td>
         <td>68.49</td>
         <td>51.15</td>

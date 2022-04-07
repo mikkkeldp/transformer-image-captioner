@@ -1,7 +1,6 @@
 # sudo apt-get install libcudart10.1
 import torch
 from torch.utils.data import DataLoader
-from build_vocab import Vocabulary
 import numpy as np
 import time
 import sys
@@ -63,12 +62,15 @@ transform_val = transforms.Compose([
                         ])
 
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
-with open("./vocab.pkl", 'rb') as f:
-        vocab = pickle.load(f)
+def set_lr(optimizer, lr):
+    for g in optimizer.param_groups:
+        g['lr'] = lr
 
-
-def main(config):
+def train(config):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Initializing Device: {device}')
 
@@ -99,15 +101,15 @@ def main(config):
 
     if config.aug_caps:
         print("Caption augmentation")
-        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/new_caps.txt", "./dataset/Flickr_8k.trainImages.txt", vocab,
+        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/new_caps.txt", "./dataset/Flickr_8k.trainImages.txt", 
                                 transform_test, config.batch_size,
                                 shuffle=True, num_workers=2, cpi=10, max_length=config.max_position_embeddings)
     else:
-        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.trainImages.txt", vocab,
+        data_loader_train = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.trainImages.txt",
                                 transform_test, config.batch_size,
                                 shuffle=True, num_workers=2, cpi=5, max_length=config.max_position_embeddings)
 
-    data_loader_val = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.devImages.txt", vocab,
+    data_loader_val = get_train_loader("./dataset/Flickr8k_Dataset", "./dataset/Flickr8k.token.txt", "./dataset/Flickr_8k.devImages.txt",
                              transform_val, config.batch_size,
                              shuffle=True, num_workers=2, cpi=5, max_length=config.max_position_embeddings)
 
@@ -117,6 +119,7 @@ def main(config):
         checkpoint = torch.load(config.checkpoint, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
+        print("STARTING LR: ", get_lr(optimizer))
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         config.start_epoch = checkpoint['epoch'] + 1
     
@@ -132,15 +135,16 @@ def main(config):
         model = caption.load_transformer_weights(model, pre_trained_model_weights, config)
     
 
-
-    print("Start Training..")
+    # set_lr(optimizer, config.lr)
+    # print("Set LR: ", get_lr(optimizer))
+    print("Start Training...")
     for epoch in range(config.start_epoch, config.epochs):
         print(f"Epoch: {epoch}")
-        epoch_loss = train_one_epoch(model, criterion, data_loader_train, optimizer, device, epoch, config.clip_max_norm)
+        epoch_loss = train_one_epoch(model, criterion, data_loader_train, optimizer, device, epoch, config.clip_max_norm, config)
         lr_scheduler.step()
         print(f"Training Loss: {epoch_loss}")
         
-        if epoch > 0:
+        if epoch > 1:
             torch.save({
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
@@ -148,12 +152,16 @@ def main(config):
                 'epoch': epoch,
             }, "./checkpoint_" + str(epoch) + ".pth")
 
-        validation_loss = evaluate(model, criterion, data_loader_val, device)
+        validation_loss = evaluate(model, criterion, data_loader_val, device, config)
         print(f"Validation Loss: {validation_loss}")
 
         print()
 
 
+
+
 if __name__ == "__main__":
     config = Config()
-    main(config)
+    train(config)
+
+
